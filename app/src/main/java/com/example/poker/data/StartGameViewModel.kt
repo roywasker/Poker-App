@@ -1,6 +1,5 @@
 package com.example.poker.data
 
-import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -35,7 +34,24 @@ class StartGameViewModel: ViewModel() {
             val currPlayerBalance = returnMoneyArray[index].value.toInt() - buyMoneyArray[index].value.toInt()
             balanceAfterGame[index] = currPlayerBalance
         }
+        updateBalanceInDataBase(balanceAfterGame)
     }
+
+        private fun updateBalanceInDataBase(balanceAfterGame: Array<Int>) {
+            databaseRef.get().addOnSuccessListener { snapshot ->
+                for (playerSnapshot in snapshot.children) {
+                    val playerName = playerSnapshot.child("name").getValue(String::class.java)
+                    var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
+                    if (playerListChosen.contains(playerName) && playerBalance != null &&playerName != null) {
+                        val playerIndex = nameOfPlayerArray.indexOfFirst { it.value == playerName }
+                        if (playerIndex != -1) {
+                            playerBalance += balanceAfterGame[playerIndex]
+                            playerSnapshot.ref.child("balance").setValue(playerBalance)
+                        }
+                    }
+                }
+            }
+        }
 
     private fun CheackInput(): Boolean {
         for (index in 0..<numOfRows.intValue){
