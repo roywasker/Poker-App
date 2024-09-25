@@ -18,6 +18,7 @@ import com.example.poker.route.Routes
 import com.example.poker.screen.AddUserScreen
 import com.example.poker.screen.HomeScreen
 import com.example.poker.screen.StartGameScreen
+import com.example.poker.screen.TransferLogScreen
 import com.example.poker.ui.theme.PokerTheme
 import com.google.firebase.Firebase
 import com.google.firebase.database.FirebaseDatabase
@@ -37,6 +38,9 @@ class MainActivity : ComponentActivity() {
                 }
                 composable(Routes.startGame){
                     StartGameScreen(navController)
+                }
+                composable(Routes.TransferLog){
+                    TransferLogScreen(navController)
                 }
             })
         }

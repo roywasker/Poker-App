@@ -6,4 +6,5 @@ object Routes {
     var playerBalance = "PlayerBalance"
     var startGame = "StartGame"
     var historyByDay = "HistoryByDay"
+    var TransferLog = "TransferLog"
 }

@@ -40,7 +40,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.poker.data.AddUserViewModel
 import com.example.poker.data.StartGameViewModel
 import com.example.poker.route.Routes
 
@@ -145,7 +143,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            ButtonFinishGameComponent("Finish Game", onClick = viewModel::finishGameButton )
+            ButtonFinishGameComponent("Finish Game", onClick = viewModel::finishGameButton, navController)
         }
     }
     if (viewModel.massageDialog.value != null) {
@@ -313,13 +311,20 @@ fun RemoveRowButtonComponent(onRemoveRow: () -> Unit) {
 }
 
 @Composable
-fun ButtonFinishGameComponent(buttonText: String, onClick: () -> Unit) {
+fun ButtonFinishGameComponent(
+    buttonText: String,
+    onClick: () -> Unit,
+    navController: NavHostController
+) {
     Button(
         modifier = Modifier
             .height(60.dp)
             .width(180.dp),
         onClick = {
-            onClick()
+            val status = onClick()
+            if(status.equals(1)){
+                navController.navigate(route = Routes.TransferLog)
+            }
         },
         shape = RoundedCornerShape(15.dp),
         enabled = true,

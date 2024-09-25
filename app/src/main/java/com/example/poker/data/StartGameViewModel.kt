@@ -1,5 +1,6 @@
 package com.example.poker.data
 
+import android.util.Log
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -16,6 +17,7 @@ class StartGameViewModel: ViewModel() {
     private var playerListChosen: MutableList<String> = mutableListOf()
     var massageDialog =  mutableStateOf<String?>(null)
     var loading = mutableStateOf(false)
+    val transferLog = mutableListOf<String>()
 
     fun addPlayerToList(name : String){
         playerList.remove(name)
@@ -25,33 +27,83 @@ class StartGameViewModel: ViewModel() {
         playerList.add(name)
         playerListChosen.remove(name)
     }
-    fun finishGameButton(){
+    fun finishGameButton() : Int {
         if (!CheackInput()){
-            return
+            return 0
         }
+        var sumMoney = 0
         var balanceAfterGame = Array(numOfRows.intValue){0}
         for (index in 0..<numOfRows.intValue){
             val currPlayerBalance = returnMoneyArray[index].value.toInt() - buyMoneyArray[index].value.toInt()
             balanceAfterGame[index] = currPlayerBalance
+            sumMoney+=currPlayerBalance
         }
-        updateBalanceInDataBase(balanceAfterGame)
+        if (sumMoney<0){
+            massageDialog.value = "You have a extra of $sumMoney shekels."
+            return 0
+        }else if (sumMoney>0){
+            massageDialog.value = "You have a deficit of $sumMoney shekels."
+            return 0
+        }else {
+            updateBalanceInDataBase(balanceAfterGame)
+            calcTransferMoney(balanceAfterGame)
+        }
+        return 1
     }
 
-        private fun updateBalanceInDataBase(balanceAfterGame: Array<Int>) {
-            databaseRef.get().addOnSuccessListener { snapshot ->
-                for (playerSnapshot in snapshot.children) {
-                    val playerName = playerSnapshot.child("name").getValue(String::class.java)
-                    var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
-                    if (playerListChosen.contains(playerName) && playerBalance != null &&playerName != null) {
-                        val playerIndex = nameOfPlayerArray.indexOfFirst { it.value == playerName }
-                        if (playerIndex != -1) {
-                            playerBalance += balanceAfterGame[playerIndex]
-                            playerSnapshot.ref.child("balance").setValue(playerBalance)
-                        }
+    private fun updateBalanceInDataBase(balanceAfterGame: Array<Int>) {
+        databaseRef.get().addOnSuccessListener { snapshot ->
+            for (playerSnapshot in snapshot.children) {
+                val playerName = playerSnapshot.child("name").getValue(String::class.java)
+                var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
+                if (playerListChosen.contains(playerName) && playerBalance != null &&playerName != null) {
+                    val playerIndex = nameOfPlayerArray.indexOfFirst { it.value == playerName }
+                    if (playerIndex != -1) {
+                        playerBalance += balanceAfterGame[playerIndex]
+                        playerSnapshot.ref.child("balance").setValue(playerBalance)
                     }
                 }
             }
         }
+    }
+
+    private fun calcTransferMoney(balanceAfterGame: Array<Int>) {
+        val gainers = mutableListOf<Pair<String, Int>>()
+        val losers = mutableListOf<Pair<String, Int>>()
+
+        // Split players into gainers and losers
+        for (index in balanceAfterGame.indices) {
+            val balance = balanceAfterGame[index]
+            val playerName = nameOfPlayerArray[index].value
+
+            if (balance > 0) {
+                gainers.add(Pair(playerName, balance))
+            } else if (balance < 0) {
+                losers.add(Pair(playerName, -balance))
+            }
+        }
+        gainers.sortByDescending { it.second }
+        losers.sortByDescending { it.second }
+        while (gainers.isNotEmpty() && losers.isNotEmpty()){
+            val gainPlayer = gainers[0]
+            val loserPlayer = losers[0]
+            val transferAmount = minOf(gainPlayer.second,loserPlayer.second)
+            if (transferAmount==gainPlayer.second){
+                gainers.removeAt(0)
+            }else if (transferAmount<gainPlayer.second){
+                gainers[0] = gainPlayer.copy(second = gainPlayer.second - transferAmount)
+                gainers.sortByDescending { it.second }
+            }
+            if (transferAmount==loserPlayer.second){
+                losers.removeAt(0)
+            }else if (transferAmount<loserPlayer.second){
+                losers[0] = loserPlayer.copy(second = loserPlayer.second - transferAmount)
+                losers.sortByDescending { it.second }
+            }
+            transferLog.add("${loserPlayer.first} transfer $transferAmount to ${gainPlayer.first}")
+            Log.d("StartGameViewModel","${loserPlayer.first} transfer $transferAmount to ${gainPlayer.first}")
+        }
+    }
 
     private fun CheackInput(): Boolean {
         for (index in 0..<numOfRows.intValue){
