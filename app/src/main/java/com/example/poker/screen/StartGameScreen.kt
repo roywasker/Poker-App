@@ -143,7 +143,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            ButtonFinishGameComponent("Finish Game", onClick = viewModel::finishGameButton, navController)
+            ButtonFinishGameComponent("Finish Game", viewModel, navController)
         }
     }
     if (viewModel.massageDialog.value != null) {
@@ -313,7 +313,7 @@ fun RemoveRowButtonComponent(onRemoveRow: () -> Unit) {
 @Composable
 fun ButtonFinishGameComponent(
     buttonText: String,
-    onClick: () -> Unit,
+    viewModel: StartGameViewModel,
     navController: NavHostController
 ) {
     Button(
@@ -321,8 +321,10 @@ fun ButtonFinishGameComponent(
             .height(60.dp)
             .width(180.dp),
         onClick = {
-            onClick()
-            navController.navigate(route = Routes.TransferLog)
+            val status = viewModel.finishGameButton()
+            if (status) {
+                navController.navigate(route = Routes.TransferLog)
+            }
         },
         shape = RoundedCornerShape(15.dp),
         enabled = true,

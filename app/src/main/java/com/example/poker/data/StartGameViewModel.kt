@@ -29,9 +29,9 @@ class StartGameViewModel: ViewModel() {
         playerListChosen.remove(name)
     }
 
-    fun finishGameButton(){
+    fun finishGameButton() : Boolean{
         if (!CheackInput()){
-            return
+            return false
         }
         var sumMoney = 0
         var balanceAfterGame = Array(numOfRows.intValue){0}
@@ -42,12 +42,15 @@ class StartGameViewModel: ViewModel() {
         }
         if (sumMoney<0){
             massageDialog.value = "You have a extra of ${abs(sumMoney)}sumMoney shekels."
+            return false
         }else if (sumMoney>0){
             massageDialog.value = "You have a deficit of $sumMoney shekels."
+            return false
         }else {
             updateBalanceInDataBase(balanceAfterGame)
             calcTransferMoney(balanceAfterGame)
         }
+        return true
     }
 
     private fun updateBalanceInDataBase(balanceAfterGame: Array<Int>) {
