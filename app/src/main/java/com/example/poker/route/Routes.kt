@@ -1,5 +1,7 @@
 package com.example.poker.route
 
+
+// Define the screen
 object Routes {
     var homeScreen = "HomeScreen"
     var addUserScreen = "AddUserScreen"

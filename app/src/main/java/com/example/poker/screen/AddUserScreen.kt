@@ -62,6 +62,7 @@ fun AddUserComponent(navController: NavHostController, viewModel: AddUserViewMod
                         color = Color.White
                     )
                 },
+                // Back arrow to do the home screen
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
@@ -84,6 +85,8 @@ fun AddUserComponent(navController: NavHostController, viewModel: AddUserViewMod
             ButtonForAddUserComponent("Add Player",onClick = viewModel::addUser)
         }
     }
+
+    // If view model set pop up massage, display it
     if (viewModel.massageDialog.value != null) {
         AlertDialog(
             onDismissRequest = { viewModel.massageDialog.value = null },
@@ -99,10 +102,12 @@ fun AddUserComponent(navController: NavHostController, viewModel: AddUserViewMod
 
 @Composable
 fun TextFieldComponent(viewModel: AddUserViewModel) {
+
     var userName by viewModel.userName
     OutlinedTextField(
         value = userName,
         onValueChange = {
+            // Save the name in the view model
             viewModel.onUserNameChange(it)
         },
         label = { Text(text = "Enter name") },

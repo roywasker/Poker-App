@@ -61,7 +61,7 @@ const val minPlayer = 4
 
 @Composable
 fun StartGameScreen(navController: NavHostController) {
-    val viewModel: StartGameViewModel = viewModel(LocalContext.current as ComponentActivity)
+    val viewModel: StartGameViewModel = viewModel(LocalContext.current as ComponentActivity) // Get ViewModel instance
     val loading by viewModel.loading
     if (loading) {
         LoadingScreen()// Display a loading screen
@@ -93,6 +93,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                         color = Color.White
                     )
                 },
+                // Set back arrow to go the home screen
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
@@ -109,12 +110,14 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
         Column(modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .verticalScroll(scrollState),
+            .verticalScroll(scrollState), // Set the screen scrollable up and down
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top)
         {
             Spacer(modifier = Modifier.height(16.dp))
             TitleTextComponent()
+
+            // Display row by default or user chose
             for (i  in 0..<numOfRows){
                 Spacer(modifier = Modifier.height(12.dp))
                 PlayerDataComponent(index = i, viewModel= viewModel)
@@ -125,6 +128,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ){
+                // Allow to add row only if it does not exceed the limit
                 if (numOfRows < maxPlayer) {
                     AddRowButtonComponent(
                         onAddRow = {
@@ -133,6 +137,8 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                     )
                 }
                 Spacer(modifier = Modifier.width(30.dp))
+
+                // Allow to delete row only if it does not exceed the limit
                 if (numOfRows > minPlayer) {
                     RemoveRowButtonComponent(
                         onRemoveRow = {
@@ -146,6 +152,8 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
             ButtonFinishGameComponent("Finish Game", viewModel, navController)
         }
     }
+
+    // If view model set pop up massage, display it
     if (viewModel.massageDialog.value != null) {
         AlertDialog(
             onDismissRequest = { viewModel.massageDialog.value = null },
@@ -204,9 +212,12 @@ fun DropDown(indexInArray: Int, viewModel: StartGameViewModel){
                     text = { Text(text = text,
                         fontSize = 14.sp)},
                     onClick ={
+
+                        // If user enter correct player name , remove this name from list
                         if (selectedPlayer != "") {
                             viewModel.removePlayerFromList(selectedPlayer)
                         }
+
                         selectedPlayer = list[index]
                         viewModel.nameOfPlayerArray[indexInArray].value = selectedPlayer
                         isExpanded = false
@@ -322,6 +333,8 @@ fun ButtonFinishGameComponent(
             .width(180.dp),
         onClick = {
             val status = viewModel.finishGameButton()
+
+            // If the function in view model finis successful move to transfer screen
             if (status) {
                 navController.navigate(route = Routes.TransferLog)
             }

@@ -73,6 +73,7 @@ fun BoxComponent(navController: NavHostController) {
                             context.finish()
                         }
                     } ) {
+                        // Set back arrow to exit the app
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
                             contentDescription = "Back",

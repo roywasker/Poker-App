@@ -49,6 +49,8 @@ fun TransferLogComponent(navController: NavHostController, transferLogViewModel:
                         color = Color.White
                     )
                 },
+
+                // Set back arrow to return the home screen
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
