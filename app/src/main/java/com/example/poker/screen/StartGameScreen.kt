@@ -321,10 +321,8 @@ fun ButtonFinishGameComponent(
             .height(60.dp)
             .width(180.dp),
         onClick = {
-            val status = onClick()
-            if(status.equals(1)){
-                navController.navigate(route = Routes.TransferLog)
-            }
+            onClick()
+            navController.navigate(route = Routes.TransferLog)
         },
         shape = RoundedCornerShape(15.dp),
         enabled = true,

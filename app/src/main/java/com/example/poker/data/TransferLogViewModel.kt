@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 class TransferLogViewModel: ViewModel() {
 
     var loading = mutableStateOf(false)
-    val transferLog = mutableListOf<String>()
+
+    // Observe the shared transfer log list from the repository
+    val transferLog = TransferLogRepository.transferLogList
 
 
 }

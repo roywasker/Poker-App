@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.database.FirebaseDatabase
+import kotlin.math.abs
 
 class StartGameViewModel: ViewModel() {
 
@@ -27,9 +28,10 @@ class StartGameViewModel: ViewModel() {
         playerList.add(name)
         playerListChosen.remove(name)
     }
-    fun finishGameButton() : Int {
+
+    fun finishGameButton(){
         if (!CheackInput()){
-            return 0
+            return
         }
         var sumMoney = 0
         var balanceAfterGame = Array(numOfRows.intValue){0}
@@ -39,16 +41,13 @@ class StartGameViewModel: ViewModel() {
             sumMoney+=currPlayerBalance
         }
         if (sumMoney<0){
-            massageDialog.value = "You have a extra of $sumMoney shekels."
-            return 0
+            massageDialog.value = "You have a extra of ${abs(sumMoney)}sumMoney shekels."
         }else if (sumMoney>0){
             massageDialog.value = "You have a deficit of $sumMoney shekels."
-            return 0
         }else {
             updateBalanceInDataBase(balanceAfterGame)
             calcTransferMoney(balanceAfterGame)
         }
-        return 1
     }
 
     private fun updateBalanceInDataBase(balanceAfterGame: Array<Int>) {
@@ -100,8 +99,8 @@ class StartGameViewModel: ViewModel() {
                 losers[0] = loserPlayer.copy(second = loserPlayer.second - transferAmount)
                 losers.sortByDescending { it.second }
             }
-            transferLog.add("${loserPlayer.first} transfer $transferAmount to ${gainPlayer.first}")
-            Log.d("StartGameViewModel","${loserPlayer.first} transfer $transferAmount to ${gainPlayer.first}")
+            TransferLogRepository.addLogEntry("${loserPlayer.first} transfer $transferAmount to ${gainPlayer.first}")
+            //Log.d("StartGameViewModel","${loserPlayer.first} transfer $transferAmount to ${gainPlayer.first}")
         }
     }
 
