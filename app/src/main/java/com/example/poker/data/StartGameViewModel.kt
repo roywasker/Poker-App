@@ -77,7 +77,7 @@ class StartGameViewModel: ViewModel() {
 
         // If sum money is negative we have extra money
         if (sumMoney<0){
-            massageDialog.value = "You have a extra of ${abs(sumMoney)}sumMoney shekels."
+            massageDialog.value = "You have a extra of ${abs(sumMoney)} shekels."
             return false
 
         // If sum money is positive we have deficit money

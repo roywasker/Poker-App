@@ -121,7 +121,7 @@ fun ButtonComponent(buttonText: String, navController: NavHostController, naviga
             .height(60.dp)
             .width(180.dp),
         onClick = {
-            if (buttonText == "Player Balance" || buttonText == "History By Day"){
+            if (buttonText == "History By Day"){
                 showDialog = true
             }else {
                 navController.navigate(navigateTo)

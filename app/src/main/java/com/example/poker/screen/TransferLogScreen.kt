@@ -82,7 +82,7 @@ fun TransferLogComponent(navController: NavHostController, transferLogViewModel:
 
             // Display each transfer log
             transferLog.value.forEach { log ->
-                Text(text = log, fontSize = 16.sp, modifier = Modifier.padding(8.dp))
+                Text(text = log, fontSize = 24.sp, modifier = Modifier.padding(16.dp))
             }
         }
     }
