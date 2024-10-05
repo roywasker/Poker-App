@@ -87,10 +87,22 @@ class StartGameViewModel: ViewModel() {
 
         // If sum money is zero we don't have extra or deficit
         }else {
-            updateBalanceInDataBase(balanceAfterGame)
             calcTransferMoney(balanceAfterGame)
+            updateBalanceInDataBase(balanceAfterGame)
         }
         return true
+    }
+
+    /**
+     * Function to reset the data box in game screen
+     */
+    private fun resetPageData(){
+        buyMoneyArray = Array(9) { mutableStateOf("")}
+        returnMoneyArray = Array(9) { mutableStateOf("")}
+        playerListChosen.clear()
+        numOfRows = mutableIntStateOf(4)
+        nameOfPlayerArray = Array(9) { mutableStateOf("") }
+        getPlayerListToStartGame()
     }
 
     /**
@@ -116,7 +128,7 @@ class StartGameViewModel: ViewModel() {
                     }
                 }
             }
-        }
+        }.addOnSuccessListener { resetPageData() }
     }
 
     /**
