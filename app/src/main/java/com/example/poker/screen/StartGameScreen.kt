@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -169,7 +171,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
 
 @Composable
 fun TitleTextComponent(){
-    Row (
+    /*Row (
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start
     ){
@@ -182,6 +184,23 @@ fun TitleTextComponent(){
         Spacer(modifier = Modifier.width(80.dp))
         Text("Return",
             fontSize = 16.sp)
+    }*/
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+        BasicText(
+            text = "Name",
+            modifier = Modifier.weight(1f),
+            style = TextStyle(fontSize = 18.sp) // Set font size using TextStyle
+        )
+        BasicText(
+            text = "Buy",
+            modifier = Modifier.weight(1f),
+            style = TextStyle(fontSize = 18.sp) // Set font size using TextStyle
+        )
+        BasicText(
+            text = "Return",
+            modifier = Modifier.weight(0.5f),
+            style = TextStyle(fontSize = 18.sp) // Set font size using TextStyle
+        )
     }
 }
 

@@ -1,9 +1,13 @@
 package com.example.poker.data
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.database.FirebaseDatabase
+import java.time.LocalDate
 import kotlin.math.abs
 
 class StartGameViewModel: ViewModel() {
@@ -25,6 +29,8 @@ class StartGameViewModel: ViewModel() {
 
     // Reference to the data base
     private val databaseRef = FirebaseDatabase.getInstance().getReference("PlayersList")
+
+    private var databaseDateRef = FirebaseDatabase.getInstance().getReference("dateList")
 
     //List of all the player that chosen in this current game
     private var playerListChosen: MutableList<String> = mutableListOf()
@@ -58,6 +64,7 @@ class StartGameViewModel: ViewModel() {
     /**
      * Function to summarize the transfer log and update the database
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     fun finishGameButton() : Boolean{
 
         if (!CheckInput()){
@@ -88,7 +95,7 @@ class StartGameViewModel: ViewModel() {
         // If sum money is zero we don't have extra or deficit
         }else {
             calcTransferMoney(balanceAfterGame)
-            updateBalanceInDataBase(balanceAfterGame)
+            updateBalanceInDataBase(balanceAfterGame,nameOfPlayerArray)
         }
         return true
     }
@@ -108,7 +115,15 @@ class StartGameViewModel: ViewModel() {
     /**
      * Function to update the balance of money for each player in the game
      */
-    private fun updateBalanceInDataBase(balanceAfterGame: Array<Int>) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun updateBalanceInDataBase(
+        balanceAfterGame: Array<Int>,
+        nameOfPlayer: Array<MutableState<String>>
+    ){
+
+        // get the current date
+        val currentDate = LocalDate.now()
+
         databaseRef.get().addOnSuccessListener { snapshot ->
             // Go over all the player in the data base
             for (playerSnapshot in snapshot.children) {
@@ -117,7 +132,7 @@ class StartGameViewModel: ViewModel() {
 
                 // Check if the player play in the current game and the he's balance the name is correct
                 if (playerListChosen.contains(playerName) && playerBalance != null &&playerName != null) {
-                    val playerIndex = nameOfPlayerArray.indexOfFirst { it.value == playerName }
+                    val playerIndex = this.nameOfPlayerArray.indexOfFirst { it.value == playerName }
                     if (playerIndex != -1) {
 
                         //calc the current balance of money
@@ -128,7 +143,32 @@ class StartGameViewModel: ViewModel() {
                     }
                 }
             }
-        }.addOnSuccessListener { resetPageData() }
+        }.addOnSuccessListener {
+
+            // Add history by date to database
+            val dateId = databaseDateRef.push().key
+            if (dateId != null){
+
+                // Open new folder for current date
+                databaseDateRef.child(dateId).setValue(currentDate.toString()).addOnSuccessListener {
+                    databaseDateRef = databaseDateRef.child(dateId).child(currentDate.toString())
+
+                    //add all the user balance of this game
+                    for (index in balanceAfterGame.indices) {
+                        val balance = balanceAfterGame[index]
+                        val playerName = nameOfPlayer[index].value
+                        val playerId = databaseDateRef.push().key
+                        val player = mapOf("name" to playerName, "balance" to balance)
+                        if (playerId != null) {
+                            databaseDateRef.child(playerId).setValue(player)
+                        }
+                    }
+
+                    //reset all the array form data
+                    resetPageData()
+                }
+            }
+        }
     }
 
     /**
