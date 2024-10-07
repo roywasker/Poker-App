@@ -120,11 +120,7 @@ fun ButtonComponent(buttonText: String, navController: NavHostController, naviga
             .height(60.dp)
             .width(180.dp),
         onClick = {
-            if (buttonText == "History By Day"){
-                showDialog = true
-            }else {
-                navController.navigate(navigateTo)
-            }
+            navController.navigate(navigateTo)
         },
         shape = RoundedCornerShape(15.dp),
         enabled = true,
@@ -136,17 +132,6 @@ fun ButtonComponent(buttonText: String, navController: NavHostController, naviga
         Text(
             text = buttonText,
             fontSize = 18.sp
-        )
-    }
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            text = { Text("Coming Soon") },
-            confirmButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("OK")
-                }
-            }
         )
     }
 }

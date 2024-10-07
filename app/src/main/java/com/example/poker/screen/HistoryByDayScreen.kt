@@ -9,34 +9,35 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.poker.data.TransferLogViewModel
+import com.example.poker.data.HistoryByDayViewModel
 import com.example.poker.route.Routes
 
 @Composable
-fun TransferLogScreen(navController: NavHostController) {
+fun HistoryByDayScreen(navController: NavHostController) {
     // ViewModel instance
-    val transferLogViewModel: TransferLogViewModel = viewModel()
+    val historyByDayViewModel: HistoryByDayViewModel = viewModel()
 
     // Pass ViewModel to the component
-    TransferLogComponent(navController, transferLogViewModel)
+    HistoryByDayComponent(navController, historyByDayViewModel)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransferLogComponent(navController: NavHostController, transferLogViewModel: TransferLogViewModel) {
-    // Observe the transfer log from the ViewModel
-    val transferLog = transferLogViewModel.transferLog.observeAsState(emptyList())
-
+fun HistoryByDayComponent(navController: NavHostController, historyByDayViewModel: HistoryByDayViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -45,8 +46,8 @@ fun TransferLogComponent(navController: NavHostController, transferLogViewModel:
                 ),
                 title = {
                     Text(
-                        text = "Transfer Log",
-                        color = Color.Black
+                        text = "",
+                        color = Color.White
                     )
                 },
 
@@ -73,17 +74,7 @@ fun TransferLogComponent(navController: NavHostController, transferLogViewModel:
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Text(
-                text = "Transfer Summary",
-                fontSize = 24.sp,
-                color = Color.Black,
-                modifier = Modifier.padding(16.dp)
-            )
 
-            // Display each transfer log
-            transferLog.value.forEach { log ->
-                Text(text = log, fontSize = 24.sp, modifier = Modifier.padding(16.dp))
-            }
         }
     }
 }

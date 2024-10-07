@@ -281,7 +281,7 @@ class StartGameViewModel: ViewModel() {
 
         // reset the variable to default value
         nameOfPlayerArray[index]= mutableStateOf("")
-        buyMoneyArray[index] =  mutableStateOf("0")
-        returnMoneyArray[index] =  mutableStateOf("0")
+        buyMoneyArray[index] =  mutableStateOf("")
+        returnMoneyArray[index] =  mutableStateOf("")
     }
 }

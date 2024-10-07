@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.poker.route.Routes
 import com.example.poker.screen.AddUserScreen
+import com.example.poker.screen.HistoryByDayScreen
 import com.example.poker.screen.HomeScreen
 import com.example.poker.screen.PlayerBalanceScreen
 import com.example.poker.screen.StartGameScreen
@@ -45,6 +46,9 @@ class MainActivity : ComponentActivity() {
                 }
                 composable(Routes.playerBalance){
                     PlayerBalanceScreen(navController)
+                }
+                composable(Routes.historyByDay){
+                    HistoryByDayScreen(navController)
                 }
             })
         }
