@@ -240,13 +240,11 @@ fun ShowPlayerBalanceComponent(viewModel: HistoryByDayViewModel){
     Spacer(modifier = Modifier.height(8.dp)) // Spacing after header
 
     // Player Balance List
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(playerBalanceList) { (name, number) ->
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
-                BasicText(text = name, modifier = Modifier.weight(1f), style = TextStyle(fontSize = 18.sp))
-                BasicText(text = number.toString(), modifier = Modifier.weight(1f), style = TextStyle(fontSize = 18.sp))
-            }
-            Spacer(modifier = Modifier.height(6.dp)) // Add some spacing between rows
+    for (pair in playerBalanceList){
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            BasicText(text = pair.first, modifier = Modifier.weight(1f), style = TextStyle(fontSize = 18.sp))
+            BasicText(text = pair.second.toString(), modifier = Modifier.weight(1f), style = TextStyle(fontSize = 18.sp))
         }
+        Spacer(modifier = Modifier.height(6.dp)) // Add some spacing between rows
     }
 }

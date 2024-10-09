@@ -62,8 +62,8 @@ class HistoryByDayViewModel : ViewModel() {
                 val playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
                 if (playerName != null && playerBalance != null) {
                     playerList.add(Pair(playerName, playerBalance))
+                    Log.d("getDateList", "Fetched player : $playerName")
                 }
-                Log.d("getDateList", "Fetched player : $playerName")
             }
             playerList.sortByDescending { it.second }
             loading.value = false
