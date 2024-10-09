@@ -156,7 +156,7 @@ fun DropDownHistory(viewModel: HistoryByDayViewModel) {
     var isExpanded by remember { mutableStateOf(false) }
 
     // Display the selected date or a default placeholder if none is selected
-    val selectedDate by remember { viewModel.dateSelected }
+    val selectedDate = viewModel.dateSelected.value.first // Display only the date part
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
@@ -177,7 +177,7 @@ fun DropDownHistory(viewModel: HistoryByDayViewModel) {
         ExposedDropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false }) {
             list.forEachIndexed { index, text ->
                 DropdownMenuItem(
-                    text = { Text(text = text, fontSize = 14.sp) },
+                    text = { Text(text = text.first, fontSize = 14.sp) },
                     onClick = {
                         viewModel.dateSelected.value = list[index]
                         isExpanded = false // Collapse the dropdown after selection
