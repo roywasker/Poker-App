@@ -149,8 +149,9 @@ class StartGameViewModel: ViewModel() {
             val dateId = databaseDateRef.push().key
             if (dateId != null){
 
+                val dateToDB = mapOf("date" to currentDate.toString(),)
                 // Open new folder for current date
-                databaseDateRef.child(dateId).setValue(currentDate.toString()).addOnSuccessListener {
+                databaseDateRef.child(dateId).setValue(dateToDB).addOnSuccessListener {
                     databaseDateRef = databaseDateRef.child(dateId).child(currentDate.toString())
 
                     //add all the user balance of this game

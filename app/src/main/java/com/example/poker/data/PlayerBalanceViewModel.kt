@@ -15,7 +15,7 @@ class PlayerBalanceViewModel : ViewModel(){
     val playerList: MutableList<Pair<String, Int>> = mutableListOf()
 
     /**
-     *
+     * Function to get all player balance
      */
     fun gerPlayerBalance(){
         loading.value = true // Set loading to true when starting

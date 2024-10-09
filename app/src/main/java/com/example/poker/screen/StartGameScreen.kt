@@ -1,7 +1,9 @@
 package com.example.poker.screen
 
 import android.annotation.SuppressLint
+import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,6 +80,7 @@ fun StartGameScreen(navController: NavHostController) {
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartGameComponent(navController: NavHostController,viewModel: StartGameViewModel) {
@@ -340,6 +343,7 @@ fun RemoveRowButtonComponent(onRemoveRow: () -> Unit) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ButtonFinishGameComponent(
     buttonText: String,
