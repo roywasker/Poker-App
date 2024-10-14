@@ -55,9 +55,11 @@ class HistoryByDayViewModel : ViewModel() {
         }
         loading.value = true // Set loading to true when starting
         playerList.clear()
-        databaseRef = databaseRef.child(dateSelected.value.second).child("playerBalance")
-        databaseRef.get().addOnSuccessListener { snapshot ->
+
+        val databaseRefForHistory = databaseRef.child(dateSelected.value.second).child("playerBalance")
+        databaseRefForHistory.get().addOnSuccessListener { snapshot ->
             for (playerSnapshot in snapshot.children) {
+                Log.d("getDateList", "Fetched player : test 2")
                 val playerName = playerSnapshot.child("name").getValue(String::class.java)
                 val playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
                 if (playerName != null && playerBalance != null) {

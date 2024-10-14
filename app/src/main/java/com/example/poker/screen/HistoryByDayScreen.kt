@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.HistoryByDayViewModel
-import com.example.poker.data.StartGameViewModel
 import com.example.poker.route.Routes
 
 
