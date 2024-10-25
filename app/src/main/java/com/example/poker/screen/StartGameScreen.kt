@@ -75,16 +75,14 @@ fun StartGameScreen(navController: NavHostController) {
         StartGameComponent(navController,viewModel)
     }
 
-    BackHandler {
-        navController.navigate(Routes.homeScreen)
-    }
-
     LaunchedEffect(Unit) {
         if (!loading) {
             viewModel.getPlayerListToStartGame()
         }
     }
-
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

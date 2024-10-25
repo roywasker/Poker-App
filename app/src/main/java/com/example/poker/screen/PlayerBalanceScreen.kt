@@ -48,14 +48,14 @@ fun PlayerBalanceScreen(navController: NavHostController){
         PlayerBalanceComponent(navController,viewModel)
     }
 
-    BackHandler {
-        navController.navigate(Routes.homeScreen)
-    }
-
     LaunchedEffect(Unit) {
         if (!loading) {
             viewModel.gerPlayerBalance()
         }
+    }
+
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
     }
 }
 
