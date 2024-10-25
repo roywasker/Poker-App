@@ -1,6 +1,7 @@
 package com.example.poker.screen
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,14 @@ import com.example.poker.ui.theme.PokerTheme
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
+
+    // Get the current activity
+    val activity = (LocalContext.current as? Activity)
+
+    // Handle back button press to go to the home screen
+    BackHandler {
+        activity?.finish() // Close the activity, returning to the device's home screen
+    }
     BoxComponent(navController)
 }
 

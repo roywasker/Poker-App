@@ -1,5 +1,6 @@
 package com.example.poker.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +45,11 @@ import com.example.poker.route.Routes
 fun AddUserScreen(navController: NavHostController, ) {
     val viewModel: AddUserViewModel = viewModel() // Get ViewModel instance
     viewModel.getPlayerList()
+
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
+    }
+
     AddUserComponent(navController,viewModel)
 }
 

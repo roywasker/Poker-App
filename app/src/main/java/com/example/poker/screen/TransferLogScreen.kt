@@ -1,5 +1,6 @@
 package com.example.poker.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,10 @@ import com.example.poker.route.Routes
 fun TransferLogScreen(navController: NavHostController) {
     // ViewModel instance
     val transferLogViewModel: TransferLogViewModel = viewModel()
+
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
+    }
 
     // Pass ViewModel to the component
     TransferLogComponent(navController, transferLogViewModel)

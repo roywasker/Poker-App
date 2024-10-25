@@ -3,6 +3,7 @@ package com.example.poker.screen
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,6 +64,7 @@ import com.example.poker.route.Routes
 const val maxPlayer = 9
 const val minPlayer = 4
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StartGameScreen(navController: NavHostController) {
     val viewModel: StartGameViewModel = viewModel(LocalContext.current as ComponentActivity) // Get ViewModel instance
@@ -72,6 +74,11 @@ fun StartGameScreen(navController: NavHostController) {
     } else {
         StartGameComponent(navController,viewModel)
     }
+
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
+    }
+
     LaunchedEffect(Unit) {
         if (!loading) {
             viewModel.getPlayerListToStartGame()

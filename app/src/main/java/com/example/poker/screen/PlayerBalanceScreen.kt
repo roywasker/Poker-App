@@ -1,6 +1,7 @@
 package com.example.poker.screen
 
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,6 +47,11 @@ fun PlayerBalanceScreen(navController: NavHostController){
     } else {
         PlayerBalanceComponent(navController,viewModel)
     }
+
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
+    }
+
     LaunchedEffect(Unit) {
         if (!loading) {
             viewModel.gerPlayerBalance()

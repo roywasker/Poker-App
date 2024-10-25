@@ -2,6 +2,7 @@ package com.example.poker.screen
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -66,6 +67,11 @@ fun HistoryByDayScreen(navController: NavHostController) {
     } else {
         HistoryByDayComponent(navController, historyByDayViewModel)
     }
+
+    BackHandler {
+        navController.navigate(Routes.homeScreen)
+    }
+
     LaunchedEffect(Unit) {
         if (!loading) {
             historyByDayViewModel.getDateList()
