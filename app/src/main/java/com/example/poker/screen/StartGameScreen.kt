@@ -179,20 +179,6 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
 
 @Composable
 fun TitleTextComponent(){
-    /*Row (
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
-    ){
-        Spacer(modifier = Modifier.width(50.dp)) // Adds horizontal  space
-        Text(text = "Name",
-            fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(110.dp))
-        Text("Buy",
-            fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(80.dp))
-        Text("Return",
-            fontSize = 16.sp)
-    }*/
     Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
         BasicText(
             text = "Name",
@@ -389,10 +375,3 @@ fun LoadingScreen() {
         )
     }
 }
-
-/*@Preview(showBackground = true)
-@Composable
-fun StartGamePreview() {
-    val navController = rememberNavController()
-    StartGameComponent(navController)
-}*/

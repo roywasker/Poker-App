@@ -153,10 +153,3 @@ fun ButtonForAddUserComponent(buttonText: String, onClick: () -> Unit) {
         )
     }
 }
-
-/*@Preview(showBackground = true)
-@Composable
-fun AddUserPreview() {
-    val navController = rememberNavController()
-    AddUserComponent(navController)
-}*/
