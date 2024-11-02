@@ -179,6 +179,9 @@ class StartGameViewModel: ViewModel() {
         val gainers = mutableListOf<Pair<String, Int>>()
         val losers = mutableListOf<Pair<String, Int>>()
 
+        //clean the transfer list
+        TransferLogRepository.cleanTransferLog()
+
         // Split players into gainers and losers
         for (index in balanceAfterGame.indices) {
             val balance = balanceAfterGame[index]

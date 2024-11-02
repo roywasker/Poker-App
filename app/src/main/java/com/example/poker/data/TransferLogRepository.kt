@@ -11,4 +11,9 @@ object TransferLogRepository {
         currentList.add(entry)
         transferLogList.value = currentList
     }
+
+    //Function to clean the logs
+    fun cleanTransferLog() {
+        transferLogList.value = emptyList()
+    }
 }
