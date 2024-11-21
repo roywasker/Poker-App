@@ -48,7 +48,7 @@ class HistoryByDayViewModel : ViewModel() {
     /**
      * Function to get all player balance by this date
      */
-    fun gerPlayerBalanceByDate(){
+    fun getPlayerBalanceByDate(){
         if (dateSelected.value.first == "Pick a date"){
             massageDialog.value = "Please pick a date"
             return

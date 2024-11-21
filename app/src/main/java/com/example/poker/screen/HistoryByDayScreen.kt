@@ -160,6 +160,7 @@ fun DropDownHistory(viewModel: HistoryByDayViewModel) {
     val list by remember { mutableStateOf(viewModel.dateList) }
     var isExpanded by remember { mutableStateOf(false) }
 
+    list.reverse()
     // Display the selected date or a default placeholder if none is selected
     val selectedDate = viewModel.dateSelected.value.first // Display only the date part
 
@@ -205,7 +206,7 @@ fun ButtonShowDataComponent(
             .height(60.dp)
             .width(160.dp),
         onClick = {
-            viewModel.gerPlayerBalanceByDate()
+            viewModel.getPlayerBalanceByDate()
 
         },
         shape = RoundedCornerShape(15.dp),
