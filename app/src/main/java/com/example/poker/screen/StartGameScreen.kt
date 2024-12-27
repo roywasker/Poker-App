@@ -136,7 +136,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
 
             Row (
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.SpaceEvenly
             ){
                 // Allow to add row only if it does not exceed the limit
                 if (numOfRows < maxPlayer) {
@@ -146,7 +146,6 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                         }
                     )
                 }
-                Spacer(modifier = Modifier.width(30.dp))
 
                 // Allow to delete row only if it does not exceed the limit
                 if (numOfRows > minPlayer) {

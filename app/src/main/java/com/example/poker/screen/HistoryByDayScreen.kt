@@ -157,36 +157,47 @@ fun HistoryByDayComponent(viewModel: HistoryByDayViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropDownHistory(viewModel: HistoryByDayViewModel) {
-    val list by remember { mutableStateOf(viewModel.dateList) }
     var isExpanded by remember { mutableStateOf(false) }
-
-    list.reverse()
-    // Display the selected date or a default placeholder if none is selected
-    val selectedDate = viewModel.dateSelected.value.first // Display only the date part
+    
+    // Keep dates list in remember to preserve state across recompositions
+    val datesList by remember(viewModel.dateList) { 
+        mutableStateOf(viewModel.dateList.asReversed())
+    }
 
     ExposedDropdownMenuBox(
         expanded = isExpanded,
-        onExpandedChange = { isExpanded = !isExpanded }) {
+        onExpandedChange = { isExpanded = it }
+    ) {
         OutlinedTextField(
-            value = selectedDate,
+            value = viewModel.dateSelected.value.first,
+            onValueChange = {},
+            readOnly = true,
             modifier = Modifier
                 .menuAnchor()
                 .width(160.dp)
                 .height(60.dp),
-            onValueChange = {},
-            readOnly = true,
             shape = RoundedCornerShape(16.dp),
             leadingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded)
-            }
+            },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
         )
-        ExposedDropdownMenu(expanded = isExpanded, onDismissRequest = { isExpanded = false }) {
-            list.forEachIndexed { index, text ->
+
+        ExposedDropdownMenu(
+            expanded = isExpanded,
+            onDismissRequest = { isExpanded = false }
+        ) {
+            datesList.forEach { date ->
                 DropdownMenuItem(
-                    text = { Text(text = text.first, fontSize = 14.sp) },
+                    text = { 
+                        Text(
+                            text = date.first,
+                            fontSize = 14.sp
+                        )
+                    },
                     onClick = {
-                        viewModel.dateSelected.value = list[index]
-                        isExpanded = false // Collapse the dropdown after selection
+                        viewModel.dateSelected.value = date
+                        isExpanded = false
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
