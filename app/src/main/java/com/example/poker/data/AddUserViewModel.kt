@@ -3,17 +3,24 @@ package com.example.poker.data
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.launch
 
 class AddUserViewModel : ViewModel() {
 
     var userName = mutableStateOf("")
 
     //List of all the player that have user in the app
-    private var playerList: MutableList<String> = mutableListOf()
+    var playerList: MutableList<String> = mutableListOf()
 
     // Reference to the data base
     private val databaseRef = FirebaseDatabase.getInstance().getReference("PlayersList")
+
+    var userToChange = mutableStateOf("")
+
+    var moneyChange = mutableStateOf("")
 
     // Massage to pup up in the screen
     var massageDialog =  mutableStateOf<String?>(null)
@@ -75,6 +82,40 @@ class AddUserViewModel : ViewModel() {
                 Log.e("AddUserViewModel", "Failed to add user", e)
                 massageDialog.value = "Failed to add player ${userName.value}\n Try later"
             }
+        }
+    }
+
+    fun changeUserValue(){
+        if (moneyChange.value == "" || userToChange.value == ""){
+            massageDialog.value = "Enter all the field "
+            return
+        }
+        if (moneyChange.value.toInt() < 0 ){
+            massageDialog.value = "It is not possible to subtract a negative amount from a user."
+            return
+        }
+        Log.d("roy1234", "changeUserValue: ${userToChange.value} ${moneyChange.value}")
+
+        databaseRef.get().addOnSuccessListener { snapshot ->
+            // Go over all the player in the data base
+            for (playerSnapshot in snapshot.children) {
+                val playerName = playerSnapshot.child("name").getValue(String::class.java)
+                var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
+
+                // Check if the player play in the current game and the he's balance the name is correct
+                if (playerName?.let { userToChange.value.contains(it) } == true) {
+                    if (playerBalance != null) {
+                        playerBalance -= moneyChange.value.toInt()
+
+                        // Update the balance in data base
+                        playerSnapshot.ref.child("balance").setValue(playerBalance)
+                    }
+                }
+            }
+        }.addOnSuccessListener {
+            massageDialog.value = "Reduction successfully completed"
+            userToChange.value = ""
+            moneyChange.value = ""
         }
     }
 }
