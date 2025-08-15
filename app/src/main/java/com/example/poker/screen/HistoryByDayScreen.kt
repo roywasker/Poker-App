@@ -1,9 +1,7 @@
 package com.example.poker.screen
 
 import android.annotation.SuppressLint
-import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,7 +51,6 @@ import com.example.poker.data.HistoryByDayViewModel
 import com.example.poker.route.Routes
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HistoryByDayScreen(navController: NavHostController) {
     // ViewModel instance
@@ -77,7 +74,6 @@ fun HistoryByDayScreen(navController: NavHostController) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryByDayComponent(navController: NavHostController, historyByDayViewModel: HistoryByDayViewModel) {
@@ -138,7 +134,6 @@ fun HistoryByDayComponent(navController: NavHostController, historyByDayViewMode
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HistoryByDayComponent(viewModel: HistoryByDayViewModel) {
     Row (
@@ -204,7 +199,6 @@ fun DropDownHistory(viewModel: HistoryByDayViewModel) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ButtonShowDataComponent(
     buttonText: String,

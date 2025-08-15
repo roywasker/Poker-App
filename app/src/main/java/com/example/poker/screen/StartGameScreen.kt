@@ -1,10 +1,8 @@
 package com.example.poker.screen
 
 import android.annotation.SuppressLint
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +54,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.StartGameViewModel
@@ -64,10 +63,13 @@ import com.example.poker.route.Routes
 const val maxPlayer = 9
 const val minPlayer = 4
 
-@RequiresApi(Build.VERSION_CODES.O)
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun StartGameScreen(navController: NavHostController) {
-    val viewModel: StartGameViewModel = viewModel(LocalContext.current as ComponentActivity) // Get ViewModel instance
+    val context = LocalContext.current as ComponentActivity
+    val viewModel: StartGameViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.application)
+    )
     val loading by viewModel.loading
     if (loading) {
         LoadingScreen()// Display a loading screen
@@ -85,7 +87,6 @@ fun StartGameScreen(navController: NavHostController) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartGameComponent(navController: NavHostController,viewModel: StartGameViewModel) {
@@ -158,7 +159,28 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            ButtonFinishGameComponent("Finish Game", viewModel, navController)
+
+            ButtonComponent(
+                buttonText = "Finish Game",
+                onClick = {
+                    val status = viewModel.finishGameButton()
+
+                    // If the function in view model finis successful move to transfer screen
+                    if (status) {
+                        navController.navigate(route = Routes.TransferLog)
+                    }
+                })
+
+            // Show clear session button if there's an active session
+            if (viewModel.hasActiveSession.value) {
+                Spacer(modifier = Modifier.height(12.dp))
+                ButtonComponent(
+                    buttonText = "Clear Session",
+                    onClick = {
+                        viewModel.clearSavedSession()
+                    }
+                )
+            }
         }
     }
 
@@ -269,6 +291,7 @@ fun BuyFieldComponent(index: Int, viewModel: StartGameViewModel) {
             .height(50.dp),
         onValueChange = {
             viewModel.buyMoneyArray[index].value = it
+            viewModel.onDataChanged() // Save session when data changes
         },
         keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = KeyboardType.Number,
@@ -289,6 +312,7 @@ fun ReturnFieldComponent(index: Int, viewModel: StartGameViewModel) {
             .height(50.dp),
         onValueChange = {
             viewModel.returnMoneyArray[index].value = it
+            viewModel.onDataChanged() // Save session when data changes
         },
         keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = KeyboardType.Number,
@@ -333,25 +357,16 @@ fun RemoveRowButtonComponent(onRemoveRow: () -> Unit) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ButtonFinishGameComponent(
+fun ButtonComponent(
     buttonText: String,
-    viewModel: StartGameViewModel,
-    navController: NavHostController
+    onClick: () -> Unit
 ) {
     Button(
         modifier = Modifier
             .height(60.dp)
             .width(180.dp),
-        onClick = {
-            val status = viewModel.finishGameButton()
-
-            // If the function in view model finis successful move to transfer screen
-            if (status) {
-                navController.navigate(route = Routes.TransferLog)
-            }
-        },
+        onClick =onClick,
         shape = RoundedCornerShape(15.dp),
         enabled = true,
         colors = ButtonDefaults.buttonColors(

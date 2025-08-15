@@ -1,5 +1,6 @@
 package com.example.poker.screen
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -41,6 +42,7 @@ import androidx.navigation.NavHostController
 import com.example.poker.R
 import com.example.poker.route.Routes
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun HomeScreen(navController: NavHostController) {
 
@@ -118,7 +120,6 @@ fun BoxComponent(navController: NavHostController) {
 
 @Composable
 fun ButtonComponent(buttonText: String, navController: NavHostController, navigateTo: String) {
-    var showDialog by remember { mutableStateOf(false) }
     Button(
         modifier = Modifier
             .height(60.dp)

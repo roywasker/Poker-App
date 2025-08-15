@@ -3,10 +3,7 @@ package com.example.poker.data
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.database.FirebaseDatabase
-import kotlinx.coroutines.launch
 
 class AddUserViewModel : ViewModel() {
 
@@ -59,13 +56,13 @@ class AddUserViewModel : ViewModel() {
         // If player is already in the list pup a massage
         if (playerList.contains(userName.value)){
             massageDialog.value = "Player ${userName.value} is already in the list."
-            return;
+            return
         }
 
         // If user try to enter empty name to the list pup a massage
         if (userName.value==""){
             massageDialog.value = "Please enter a name."
-            return;
+            return
         }
 
 

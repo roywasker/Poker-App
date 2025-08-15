@@ -1,16 +1,19 @@
 package com.example.poker.data
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.app.Application
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.poker.data.database.PlayerSessionRepository
+import com.example.poker.data.database.PokerDatabase
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.math.abs
 
-class StartGameViewModel: ViewModel() {
+class StartGameViewModel(application: Application): AndroidViewModel(application) {
 
     // Set the default of row to be 4
     var numOfRows = mutableIntStateOf(4)
@@ -41,6 +44,25 @@ class StartGameViewModel: ViewModel() {
     // Define the status of loading image to false
     var loading = mutableStateOf(false)
 
+    // Local database repository
+    private val sessionRepository: PlayerSessionRepository
+
+    // Track if there's an active session
+    var hasActiveSession = mutableStateOf(false)
+
+    init {
+        val database = PokerDatabase.getDatabase(application)
+        sessionRepository = PlayerSessionRepository(database.playerSessionDao())
+        
+        // Check for existing session on startup
+        viewModelScope.launch {
+            hasActiveSession.value = sessionRepository.hasActiveSession()
+            if (hasActiveSession.value) {
+                loadSavedSession()
+            }
+        }
+    }
+
     /**
      * Function to add new player to the list of chosen player
      */
@@ -49,6 +71,9 @@ class StartGameViewModel: ViewModel() {
         // Remove from the list of all available player
         playerList.remove(name)
         playerListChosen.add(name)
+        
+        // Save session after any change
+        saveCurrentSession()
     }
 
     /**
@@ -59,12 +84,14 @@ class StartGameViewModel: ViewModel() {
         // Add to the list of all available player
         playerList.add(name)
         playerListChosen.remove(name)
+        
+        // Save session after any change
+        saveCurrentSession()
     }
 
     /**
      * Function to summarize the transfer log and update the database
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun finishGameButton() : Boolean{
 
         if (!CheckInput()){
@@ -73,7 +100,7 @@ class StartGameViewModel: ViewModel() {
 
         // Variable to check if we have extra or deficit money
         var sumMoney = 0
-        var balanceAfterGame = Array(numOfRows.intValue){0}
+        val balanceAfterGame = Array(numOfRows.intValue){0}
 
         // For all player calculation the balance in the end of the game
         for (index in 0..<numOfRows.intValue){
@@ -113,9 +140,63 @@ class StartGameViewModel: ViewModel() {
     }
 
     /**
+     * Function to save current session to local database
+     */
+    private fun saveCurrentSession() {
+        viewModelScope.launch {
+            sessionRepository.saveSession(
+                numOfRows = numOfRows.intValue,
+                playerNames = nameOfPlayerArray,
+                buyAmounts = buyMoneyArray,
+                returnAmounts = returnMoneyArray
+            )
+            hasActiveSession.value = true
+        }
+    }
+
+    /**
+     * Function to load saved session from local database
+     */
+    private suspend fun loadSavedSession() {
+        val sessionData = sessionRepository.loadSession()
+        sessionData?.let { data ->
+            numOfRows.intValue = data.numOfRows
+            nameOfPlayerArray = data.playerNames
+            buyMoneyArray = data.buyAmounts
+            returnMoneyArray = data.returnAmounts
+            
+            // Rebuild chosen players list
+            playerListChosen.clear()
+            for (i in 0 until data.numOfRows) {
+                val playerName = data.playerNames[i].value
+                if (playerName.isNotEmpty()) {
+                    playerListChosen.add(playerName)
+                }
+            }
+        }
+    }
+
+    /**
+     * Function to clear saved session
+     */
+    fun clearSavedSession() {
+        viewModelScope.launch {
+            sessionRepository.clearSession()
+            hasActiveSession.value = false
+            resetPageData()
+        }
+    }
+
+    /**
+     * Function to manually trigger session save (called when user inputs data)
+     */
+    fun onDataChanged() {
+        saveCurrentSession()
+    }
+
+    /**
      * Function to update the balance of money for each player in the game
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun updateBalanceInDataBase(
         balanceAfterGame: Array<Int>,
         nameOfPlayer: Array<MutableState<String>>
@@ -167,6 +248,12 @@ class StartGameViewModel: ViewModel() {
 
                     //reset all the array form data
                     resetPageData()
+                    
+                    // Clear saved session after successful game completion
+                    viewModelScope.launch {
+                        sessionRepository.clearSession()
+                        hasActiveSession.value = false
+                    }
                 }
             }
         }
@@ -287,5 +374,8 @@ class StartGameViewModel: ViewModel() {
         nameOfPlayerArray[index]= mutableStateOf("")
         buyMoneyArray[index] =  mutableStateOf("")
         returnMoneyArray[index] =  mutableStateOf("")
+        
+        // Save session after row removal
+        saveCurrentSession()
     }
 }
