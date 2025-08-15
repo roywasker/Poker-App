@@ -1,7 +1,6 @@
 package com.example.poker.screen
 
 import android.annotation.SuppressLint
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +19,9 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +32,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,14 +49,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.StartGameViewModel
 import com.example.poker.route.Routes
@@ -65,12 +64,11 @@ const val minPlayer = 4
 
 @SuppressLint("ContextCastToActivity")
 @Composable
-fun StartGameScreen(navController: NavHostController) {
-    val context = LocalContext.current as ComponentActivity
-    val viewModel: StartGameViewModel = viewModel(
-        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.application)
-    )
-    val loading by viewModel.loading
+fun StartGameScreen(
+    navController: NavHostController,
+    viewModel: StartGameViewModel = hiltViewModel()
+    ) {
+    val loading by viewModel.loading.collectAsState()
     if (loading) {
         LoadingScreen()// Display a loading screen
     } else {
@@ -108,7 +106,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 8.dp)
@@ -172,7 +170,8 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 })
 
             // Show clear session button if there's an active session
-            if (viewModel.hasActiveSession.value) {
+            val hasActiveSession by viewModel.hasActiveSession.collectAsState()
+            if (hasActiveSession) {
                 Spacer(modifier = Modifier.height(12.dp))
                 ButtonComponent(
                     buttonText = "Clear Session",
@@ -185,12 +184,13 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
     }
 
     // If view model set pop up message, display it
-    if (viewModel.messageDialog.value != null) {
+    val messageDialog by viewModel.messageDialog.collectAsState()
+    messageDialog?.let { message ->
         AlertDialog(
-            onDismissRequest = { viewModel.messageDialog.value = null },
-            text = { Text(viewModel.messageDialog.value!!) },
+            onDismissRequest = { viewModel.clearMessageDialog() },
+            text = { Text(message) },
             confirmButton = {
-                TextButton(onClick = { viewModel.messageDialog.value = null }) {
+                TextButton(onClick = { viewModel.clearMessageDialog() }) {
                     Text("OK")
                 }
             }
@@ -231,7 +231,7 @@ fun DropDown(indexInArray: Int, viewModel: StartGameViewModel){
         onExpandedChange = {isExpanded=!isExpanded}) {
         OutlinedTextField(value = selectedPlayer ,
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 .width(120.dp)
                 .height(50.dp),
             onValueChange = {},

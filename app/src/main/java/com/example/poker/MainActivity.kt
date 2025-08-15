@@ -13,7 +13,9 @@ import com.example.poker.screen.HomeScreen
 import com.example.poker.screen.PlayerBalanceScreen
 import com.example.poker.screen.StartGameScreen
 import com.example.poker.screen.TransferLogScreen
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

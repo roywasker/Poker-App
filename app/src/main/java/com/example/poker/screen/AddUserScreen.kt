@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,6 +27,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,14 +48,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.AddUserViewModel
 import com.example.poker.route.Routes
 
 @Composable
-fun AddUserScreen(navController: NavHostController, ) {
-    val viewModel: AddUserViewModel = viewModel() // Get ViewModel instance
+fun AddUserScreen(
+    navController: NavHostController,
+    viewModel: AddUserViewModel = hiltViewModel()
+) {
     viewModel.getPlayerList()
 
     BackHandler {
@@ -82,7 +86,7 @@ fun AddUserComponent(navController: NavHostController, viewModel: AddUserViewMod
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 8.dp)
@@ -119,12 +123,13 @@ fun AddUserComponent(navController: NavHostController, viewModel: AddUserViewMod
     }
 
     // If view model set pop up message, display it
-    if (viewModel.messageDialog.value != null) {
+    val messageDialog by viewModel.messageDialog.collectAsState()
+    messageDialog?.let { message ->
         AlertDialog(
-            onDismissRequest = { viewModel.messageDialog.value = null },
-            text = { Text(viewModel.messageDialog.value!!) },
+            onDismissRequest = { viewModel.clearMessageDialog() },
+            text = { Text(message) },
             confirmButton = {
-                TextButton(onClick = { viewModel.messageDialog.value = null }) {
+                TextButton(onClick = { viewModel.clearMessageDialog() }) {
                     Text("OK")
                 }
             }
@@ -241,7 +246,7 @@ fun DropDown(viewModel: AddUserViewModel) {
             onValueChange = {}, // Read-only, no need for value change logic
             readOnly = true,
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 .width(120.dp)
                 .height(50.dp),
             shape = RoundedCornerShape(16.dp),

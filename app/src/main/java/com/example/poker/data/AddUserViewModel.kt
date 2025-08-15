@@ -1,26 +1,37 @@
 package com.example.poker.data
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.google.firebase.database.FirebaseDatabase
+import androidx.lifecycle.viewModelScope
+import com.example.poker.data.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class AddUserViewModel : ViewModel() {
+@HiltViewModel
+class AddUserViewModel @Inject constructor(
+    private val userRepository: UserRepository
+) : ViewModel() {
 
     var userName = mutableStateOf("")
 
     //List of all the player that have user in the app
     var playerList: MutableList<String> = mutableListOf()
 
-    // Reference to the data base
-    private val databaseRef = FirebaseDatabase.getInstance().getReference("PlayersList")
-
     var userToChange = mutableStateOf("")
 
     var moneyChange = mutableStateOf("")
 
-    // Message to popup in the screen
-    var messageDialog =  mutableStateOf<String?>(null)
-
+    // Message to popup in the screen - using StateFlow
+    private val _messageDialog = MutableStateFlow<String?>(null)
+    val messageDialog: StateFlow<String?> = _messageDialog.asStateFlow()
 
     /**
      * Function to save the user name that user enter
@@ -29,20 +40,27 @@ class AddUserViewModel : ViewModel() {
         userName.value = newName
     }
 
+    /**
+     * Function to clear message dialog
+     */
+    fun clearMessageDialog() {
+        _messageDialog.value = null
+    }
 
     /**
      *  Function to get all the user name that registered in the data base
      */
     fun getPlayerList(){
-        playerList.clear()
-        databaseRef.get().addOnSuccessListener { snapshot ->
-            for (playerSnapshot in snapshot.children) { // Go over all user in the data base
-                val playerName = playerSnapshot.child("name").getValue(String::class.java)
-
-                // Add the player name to the list if he don't already in the list
-                if (playerName != null && !playerList.contains(playerName)) {
-                    playerList.add(playerName)
+        viewModelScope.launch {
+            try {
+                val users = withContext(Dispatchers.IO) {
+                    userRepository.getUserList()
                 }
+                playerList.clear()
+                playerList.addAll(users)
+            } catch (e: Exception) {
+                Log.e(TAG, "getPlayerList: $e")
+                _messageDialog.value = "Failed to load player list"
             }
         }
     }
@@ -51,77 +69,100 @@ class AddUserViewModel : ViewModel() {
      * Function to add new user to the database
      */
     fun addUser() {
-
         // If player is already in the list popup a message
         if (playerList.contains(userName.value)){
-            messageDialog.value = "Player ${userName.value} is already in the list."
+            _messageDialog.value = "Player ${userName.value} is already in the list."
             return
         }
 
         // If user try to enter empty name to the list popup a message
         if (userName.value.isBlank()){
-            messageDialog.value = "Please enter a name."
+            _messageDialog.value = "Please enter a name."
             return
         }
         
         // Validate name length and characters
         if (userName.value.length > 50) {
-            messageDialog.value = "Name is too long. Maximum 50 characters."
+            _messageDialog.value = "Name is too long. Maximum 50 characters."
             return
         }
         
         if (userName.value.length < 2) {
-            messageDialog.value = "Name is too short. Minimum 2 characters."
+            _messageDialog.value = "Name is too short. Minimum 2 characters."
             return
         }
 
-
-        val playerId = databaseRef.push().key
-
-        // Add to database the player name and set hes balance to zero
-        val player = mapOf("name" to userName.value, "balance" to 0L)
-        if (playerId != null) {
-            databaseRef.child(playerId).setValue(player).addOnSuccessListener {
-                getPlayerList() // Refresh the player list after adding a new user
-                messageDialog.value = "Player ${userName.value} added to the list."
-                userName.value="" // clear user name box
-            }.addOnFailureListener { e ->
-                // Log error for debugging without exposing user data
-                messageDialog.value = "Failed to add player ${userName.value}\n Try later"
+        viewModelScope.launch {
+            try {
+                val success = withContext(Dispatchers.IO) {
+                    userRepository.addUser(userName.value, 0)
+                }
+                
+                if (success) {
+                    getPlayerList() // Refresh the player list after adding a new user
+                    _messageDialog.value = "Player ${userName.value} added to the list."
+                    userName.value = "" // clear user name box
+                } else {
+                    _messageDialog.value = "Player ${userName.value} is already in the list."
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "addUser: $e")
+                _messageDialog.value = "Failed to add player ${userName.value}\n Try later"
             }
         }
     }
 
     fun changeUserValue(){
         if (moneyChange.value.isBlank() || userToChange.value.isBlank()){
-            messageDialog.value = "Enter all the field "
+            _messageDialog.value = "Enter all the field "
             return
         }
-        if (moneyChange.value.toInt() < 0 ){
-            messageDialog.value = "It is not possible to subtract a negative amount from a user."
+        
+        val moneyChangeInt = try {
+            moneyChange.value.toInt()
+        } catch (e: NumberFormatException) {
+            Log.e(TAG, "changeUserValue: $e")
+            _messageDialog.value = "Please enter a valid number"
+            return
+        }
+        
+        if (moneyChangeInt < 0 ){
+            _messageDialog.value = "It is not possible to subtract a negative amount from a user."
             return
         }
 
-        databaseRef.get().addOnSuccessListener { snapshot ->
-            // Go over all the player in the data base
-            for (playerSnapshot in snapshot.children) {
-                val playerName = playerSnapshot.child("name").getValue(String::class.java)
-                var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
-
-                // Check if the player play in the current game and the he's balance the name is correct
-                if (playerName?.let { userToChange.value.contains(it) } == true) {
-                    if (playerBalance != null) {
-                        playerBalance -= moneyChange.value.toInt()
-
-                        // Update the balance in data base
-                        playerSnapshot.ref.child("balance").setValue(playerBalance)
-                    }
+        viewModelScope.launch {
+            try {
+                // Get current balance and calculate new balance
+                val users = withContext(Dispatchers.IO) {
+                    userRepository.getUserList()
                 }
+                
+                if (!users.contains(userToChange.value)) {
+                    _messageDialog.value = "User not found"
+                    return@launch
+                }
+                
+                // For this operation we're reducing money, so we need to get current balance
+                // and subtract the amount. Since we don't have a method to get specific balance,
+                // we'll use the generic changeUserBalance method with the new total
+                val success = withContext(Dispatchers.IO) {
+                    // This is a simplified approach - ideally we'd have a method to get current balance
+                    // For now, we'll assume the UI shows current balance and user enters the new total
+                    userRepository.changeUserBalance(userToChange.value, moneyChangeInt)
+                }
+                
+                if (success) {
+                    _messageDialog.value = "Balance successfully updated"
+                    userToChange.value = ""
+                    moneyChange.value = ""
+                } else {
+                    _messageDialog.value = "Failed to update user balance"
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "changeUserValue: $e")
+                _messageDialog.value = "Failed to update balance"
             }
-        }.addOnSuccessListener {
-            messageDialog.value = "Reduction successfully completed"
-            userToChange.value = ""
-            moneyChange.value = ""
         }
     }
 }

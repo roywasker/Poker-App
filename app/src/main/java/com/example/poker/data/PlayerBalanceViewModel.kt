@@ -1,37 +1,48 @@
 package com.example.poker.data
 
-import androidx.compose.runtime.mutableStateOf
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.google.firebase.database.FirebaseDatabase
+import androidx.lifecycle.viewModelScope
+import com.example.poker.data.repository.PlayerRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class PlayerBalanceViewModel : ViewModel(){
-    // Define the status of loading image to false
-    var loading = mutableStateOf(false)
+@HiltViewModel
+class PlayerBalanceViewModel @Inject constructor(
+    private val playerRepository: PlayerRepository
+) : ViewModel() {
+    // Define the status of loading image to false - using StateFlow
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    // Reference to the data base
-    private val databaseRef = FirebaseDatabase.getInstance().getReference("PlayersList")
-
-    // Player list
-    val playerList: MutableList<Pair<String, Int>> = mutableListOf()
+    // Player list - using StateFlow for better performance
+    private val _playerList = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
+    val playerList: StateFlow<List<Pair<String, Int>>> = _playerList.asStateFlow()
 
     /**
      * Function to get all player balance
      */
     fun gerPlayerBalance(){
-        loading.value = true // Set loading to true when starting
-        playerList.clear()
-        databaseRef.get().addOnSuccessListener { snapshot ->
-            for (playerSnapshot in snapshot.children) {
-                val playerName = playerSnapshot.child("name").getValue(String::class.java)
-                val playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
-                if (playerName != null && playerBalance != null) {
-                    playerList.add(Pair(playerName, playerBalance))
+        viewModelScope.launch {
+            _loading.value = true
+            
+            try {
+                val players = withContext(Dispatchers.IO) {
+                    playerRepository.getAllPlayers()
                 }
+                _playerList.value = players
+                _loading.value = false
+            } catch (e: Exception) {
+                Log.e(TAG, "gerPlayerBalance: $e")
+                _loading.value = false
             }
-            playerList.sortByDescending { it.second }
-            loading.value = false
-        }.addOnFailureListener {
-            loading.value = false
         }
     }
 }

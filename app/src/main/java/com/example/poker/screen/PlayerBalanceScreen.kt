@@ -1,7 +1,6 @@
 package com.example.poker.screen
 
 import android.annotation.SuppressLint
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,24 +25,26 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.PlayerBalanceViewModel
 import com.example.poker.route.Routes
 
 @SuppressLint("ContextCastToActivity")
 @Composable
-fun PlayerBalanceScreen(navController: NavHostController){
-    val viewModel: PlayerBalanceViewModel = viewModel(LocalContext.current as ComponentActivity) // Get ViewModel instance
-    val loading by viewModel.loading
+fun PlayerBalanceScreen(
+    navController: NavHostController,
+    viewModel: PlayerBalanceViewModel = hiltViewModel()
+){
+    val loading by viewModel.loading.collectAsState()
     if (loading) {
         LoadingScreen()// Display a loading screen
     } else {
@@ -64,7 +65,7 @@ fun PlayerBalanceScreen(navController: NavHostController){
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerBalanceComponent(navController: NavHostController, viewModel: PlayerBalanceViewModel) {
-    val playerBalanceList: List<Pair<String, Int>> = viewModel.playerList // Assuming playerList is a List<Pair<String, Int>>
+    val playerBalanceList by viewModel.playerList.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -76,7 +77,7 @@ fun PlayerBalanceComponent(navController: NavHostController, viewModel: PlayerBa
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 8.dp)

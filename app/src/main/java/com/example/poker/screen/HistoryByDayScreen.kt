@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,6 +27,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,18 +47,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.HistoryByDayViewModel
 import com.example.poker.route.Routes
 
 
 @Composable
-fun HistoryByDayScreen(navController: NavHostController) {
-    // ViewModel instance
-    val historyByDayViewModel: HistoryByDayViewModel = viewModel()
+fun HistoryByDayScreen(
+    navController: NavHostController,
+    historyByDayViewModel: HistoryByDayViewModel = hiltViewModel()
+) {
 
-    val loading by historyByDayViewModel.loading
+    val loading by historyByDayViewModel.loading.collectAsState()
     if (loading) {
         LoadingScreen()// Display a loading screen
     } else {
@@ -94,7 +97,7 @@ fun HistoryByDayComponent(navController: NavHostController, historyByDayViewMode
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 8.dp)
@@ -121,12 +124,13 @@ fun HistoryByDayComponent(navController: NavHostController, historyByDayViewMode
     }
 
     // If view model set pop up message, display it
-    if (historyByDayViewModel.messageDialog.value != null) {
+    val messageDialog by historyByDayViewModel.messageDialog.collectAsState()
+    messageDialog?.let { message ->
         AlertDialog(
-            onDismissRequest = { historyByDayViewModel.messageDialog.value = null },
-            text = { Text(historyByDayViewModel.messageDialog.value!!) },
+            onDismissRequest = { historyByDayViewModel.clearMessageDialog() },
+            text = { Text(message) },
             confirmButton = {
-                TextButton(onClick = { historyByDayViewModel.messageDialog.value = null }) {
+                TextButton(onClick = { historyByDayViewModel.clearMessageDialog() }) {
                     Text("OK")
                 }
             }
@@ -166,7 +170,7 @@ fun DropDownHistory(viewModel: HistoryByDayViewModel) {
             onValueChange = {},
             readOnly = true,
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 .width(160.dp)
                 .height(60.dp),
             shape = RoundedCornerShape(16.dp),
@@ -228,7 +232,7 @@ fun ButtonShowDataComponent(
 
 @Composable
 fun ShowPlayerBalanceComponent(viewModel: HistoryByDayViewModel){
-    val playerBalanceList: List<Pair<String, Int>> = viewModel.playerList
+    val playerBalanceList by viewModel.playerList.collectAsState()
 
     if (playerBalanceList.isEmpty()){
         return

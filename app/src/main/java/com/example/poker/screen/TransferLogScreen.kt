@@ -1,7 +1,9 @@
 package com.example.poker.screen
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +18,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.livedata.observeAsState
@@ -27,15 +37,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.TransferLogViewModel
 import com.example.poker.route.Routes
 
 @Composable
-fun TransferLogScreen(navController: NavHostController) {
-    // ViewModel instance
-    val transferLogViewModel: TransferLogViewModel = viewModel()
+fun TransferLogScreen(
+    navController: NavHostController,
+    transferLogViewModel: TransferLogViewModel = hiltViewModel()
+) {
 
     BackHandler {
         navController.navigate(Routes.homeScreen)
@@ -68,7 +79,7 @@ fun TransferLogComponent(navController: NavHostController, transferLogViewModel:
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 8.dp)
@@ -156,5 +167,7 @@ fun ShareSummeryOnWhatsApp(context: Context, transferLog: State<List<String>>) {
     } catch (e: Exception) {
         // Show a toast if WhatsApp is not installed
         Toast.makeText(context, "WhatsApp is not installed on this device", Toast.LENGTH_SHORT).show()
+        Log.e(TAG, "ShareSummeryOnWhatsApp: $e")
+
     }
 }
