@@ -184,13 +184,13 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
         }
     }
 
-    // If view model set pop up massage, display it
-    if (viewModel.massageDialog.value != null) {
+    // If view model set pop up message, display it
+    if (viewModel.messageDialog.value != null) {
         AlertDialog(
-            onDismissRequest = { viewModel.massageDialog.value = null },
-            text = { Text(viewModel.massageDialog.value!!) },
+            onDismissRequest = { viewModel.messageDialog.value = null },
+            text = { Text(viewModel.messageDialog.value!!) },
             confirmButton = {
-                TextButton(onClick = { viewModel.massageDialog.value = null }) {
+                TextButton(onClick = { viewModel.messageDialog.value = null }) {
                     Text("OK")
                 }
             }
@@ -352,7 +352,7 @@ fun RemoveRowButtonComponent(onRemoveRow: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Default.Delete, // Use the default "Delete" icon
-            contentDescription = "Add Row"
+            contentDescription = "Remove Row"
         )
     }
 }

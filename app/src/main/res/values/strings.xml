@@ -1,3 +1,52 @@
 <resources>
     <string name="app_name">poker</string>
+    
+    <!-- Navigation and Buttons -->
+    <string name="start_game">Start Game</string>
+    <string name="add_new_player">Add New Player</string>
+    <string name="player_balance">Player Balance</string>
+    <string name="history_by_day">History By Day</string>
+    <string name="finish_game">Finish Game</string>
+    <string name="clear_session">Clear Session</string>
+    <string name="add_player">Add Player</string>
+    <string name="show_player_data">Show Player Data</string>
+    <string name="change">Change</string>
+    <string name="ok">OK</string>
+    <string name="back">Back</string>
+    
+    <!-- Form Labels -->
+    <string name="name">Name</string>
+    <string name="buy">Buy</string>
+    <string name="return_label">Return</string>
+    <string name="number">Number</string>
+    <string name="enter_name">Enter name</string>
+    <string name="pick_a_date">Pick a date</string>
+    
+    <!-- Titles -->
+    <string name="add_new_player_title">Add new player</string>
+    <string name="deduct_money_from_player">Deduct money from a player</string>
+    
+    <!-- Error Messages -->
+    <string name="please_fill_all_fields">Please fill all the field.</string>
+    <string name="please_enter_numbers_only">Please enter numbers only.</string>
+    <string name="please_enter_valid_numbers">Please enter valid numbers only.</string>
+    <string name="amount_too_large">Amount too large to process.</string>
+    <string name="player_already_exists">Player %1$s is already in the list.</string>
+    <string name="please_enter_name">Please enter a name.</string>
+    <string name="failed_to_add_player">Failed to add player %1$s\n Try later</string>
+    <string name="enter_all_fields">Enter all the field </string>
+    <string name="cannot_subtract_negative">It is not possible to subtract a negative amount from a user.</string>
+    <string name="please_pick_date">Please pick a date</string>
+    <string name="failed_to_update_game_data">Failed to update game data. Please try again.</string>
+    
+    <!-- Success Messages -->
+    <string name="player_added_successfully">Player %1$s added to the list.</string>
+    <string name="reduction_completed">Reduction successfully completed</string>
+    <string name="extra_money">You have a extra of %1$d shekels.</string>
+    <string name="deficit_money">You have a deficit of %1$d shekels.</string>
+    
+    <!-- Content Descriptions -->
+    <string name="add_row">Add Row</string>
+    <string name="remove_row">Remove Row</string>
+    <string name="app_logo">App Logo</string>
 </resources>

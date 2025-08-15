@@ -1,6 +1,5 @@
 package com.example.poker.data
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.database.FirebaseDatabase
@@ -19,8 +18,8 @@ class AddUserViewModel : ViewModel() {
 
     var moneyChange = mutableStateOf("")
 
-    // Massage to pup up in the screen
-    var massageDialog =  mutableStateOf<String?>(null)
+    // Message to popup in the screen
+    var messageDialog =  mutableStateOf<String?>(null)
 
 
     /**
@@ -53,15 +52,26 @@ class AddUserViewModel : ViewModel() {
      */
     fun addUser() {
 
-        // If player is already in the list pup a massage
+        // If player is already in the list popup a message
         if (playerList.contains(userName.value)){
-            massageDialog.value = "Player ${userName.value} is already in the list."
+            messageDialog.value = "Player ${userName.value} is already in the list."
             return
         }
 
-        // If user try to enter empty name to the list pup a massage
-        if (userName.value==""){
-            massageDialog.value = "Please enter a name."
+        // If user try to enter empty name to the list popup a message
+        if (userName.value.isBlank()){
+            messageDialog.value = "Please enter a name."
+            return
+        }
+        
+        // Validate name length and characters
+        if (userName.value.length > 50) {
+            messageDialog.value = "Name is too long. Maximum 50 characters."
+            return
+        }
+        
+        if (userName.value.length < 2) {
+            messageDialog.value = "Name is too short. Minimum 2 characters."
             return
         }
 
@@ -69,29 +79,28 @@ class AddUserViewModel : ViewModel() {
         val playerId = databaseRef.push().key
 
         // Add to database the player name and set hes balance to zero
-        val player = mapOf("name" to userName.value, "balance" to 0)
+        val player = mapOf("name" to userName.value, "balance" to 0L)
         if (playerId != null) {
             databaseRef.child(playerId).setValue(player).addOnSuccessListener {
                 getPlayerList() // Refresh the player list after adding a new user
-                massageDialog.value = "Player ${userName.value} added to the list."
+                messageDialog.value = "Player ${userName.value} added to the list."
                 userName.value="" // clear user name box
             }.addOnFailureListener { e ->
-                Log.e("AddUserViewModel", "Failed to add user", e)
-                massageDialog.value = "Failed to add player ${userName.value}\n Try later"
+                // Log error for debugging without exposing user data
+                messageDialog.value = "Failed to add player ${userName.value}\n Try later"
             }
         }
     }
 
     fun changeUserValue(){
-        if (moneyChange.value == "" || userToChange.value == ""){
-            massageDialog.value = "Enter all the field "
+        if (moneyChange.value.isBlank() || userToChange.value.isBlank()){
+            messageDialog.value = "Enter all the field "
             return
         }
         if (moneyChange.value.toInt() < 0 ){
-            massageDialog.value = "It is not possible to subtract a negative amount from a user."
+            messageDialog.value = "It is not possible to subtract a negative amount from a user."
             return
         }
-        Log.d("roy1234", "changeUserValue: ${userToChange.value} ${moneyChange.value}")
 
         databaseRef.get().addOnSuccessListener { snapshot ->
             // Go over all the player in the data base
@@ -110,7 +119,7 @@ class AddUserViewModel : ViewModel() {
                 }
             }
         }.addOnSuccessListener {
-            massageDialog.value = "Reduction successfully completed"
+            messageDialog.value = "Reduction successfully completed"
             userToChange.value = ""
             moneyChange.value = ""
         }

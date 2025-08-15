@@ -10,6 +10,9 @@ import com.example.poker.data.database.PlayerSessionRepository
 import com.example.poker.data.database.PokerDatabase
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import kotlin.math.abs
 
@@ -38,8 +41,8 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
     //List of all the player that chosen in this current game
     private var playerListChosen: MutableList<String> = mutableListOf()
 
-    // Massage to pup up in the screen
-    var massageDialog =  mutableStateOf<String?>(null)
+    // Message to popup in the screen
+    var messageDialog =  mutableStateOf<String?>(null)
 
     // Define the status of loading image to false
     var loading = mutableStateOf(false)
@@ -106,17 +109,17 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
         for (index in 0..<numOfRows.intValue){
             val currPlayerBalance = returnMoneyArray[index].value.toInt() - buyMoneyArray[index].value.toInt()
             balanceAfterGame[index] = currPlayerBalance
-            sumMoney+=currPlayerBalance
+            sumMoney += currPlayerBalance
         }
 
         // If sum money is negative we have extra money
         if (sumMoney<0){
-            massageDialog.value = "You have a extra of ${abs(sumMoney)} shekels."
+            messageDialog.value = "You have a extra of ${abs(sumMoney)} shekels."
             return false
 
         // If sum money is positive we have deficit money
         }else if (sumMoney>0){
-            massageDialog.value = "You have a deficit of $sumMoney shekels."
+            messageDialog.value = "You have a deficit of $sumMoney shekels."
             return false
 
         // If sum money is zero we don't have extra or deficit
@@ -201,38 +204,46 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
         balanceAfterGame: Array<Int>,
         nameOfPlayer: Array<MutableState<String>>
     ){
+        viewModelScope.launch {
+            try {
+                // get the current date
+                val currentDate = LocalDate.now()
 
-        // get the current date
-        val currentDate = LocalDate.now()
+                val snapshot = withContext(Dispatchers.IO) {
+                    databaseRef.get().await()
+                }
+                
+                // Go over all the player in the data base
+                for (playerSnapshot in snapshot.children) {
+                    val playerName = playerSnapshot.child("name").getValue(String::class.java)
+                    var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
 
-        databaseRef.get().addOnSuccessListener { snapshot ->
-            // Go over all the player in the data base
-            for (playerSnapshot in snapshot.children) {
-                val playerName = playerSnapshot.child("name").getValue(String::class.java)
-                var playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
+                    // Check if the player play in the current game and the he's balance the name is correct
+                    if (playerListChosen.contains(playerName) && playerBalance != null && playerName != null) {
+                        val playerIndex = this@StartGameViewModel.nameOfPlayerArray.indexOfFirst { it.value == playerName }
+                        if (playerIndex != -1) {
 
-                // Check if the player play in the current game and the he's balance the name is correct
-                if (playerListChosen.contains(playerName) && playerBalance != null &&playerName != null) {
-                    val playerIndex = this.nameOfPlayerArray.indexOfFirst { it.value == playerName }
-                    if (playerIndex != -1) {
+                            //calc the current balance of money
+                            playerBalance += balanceAfterGame[playerIndex]
 
-                        //calc the current balance of money
-                        playerBalance += balanceAfterGame[playerIndex]
-
-                        // Update the balance in data base
-                        playerSnapshot.ref.child("balance").setValue(playerBalance)
+                            // Update the balance in data base
+                            withContext(Dispatchers.IO) {
+                                playerSnapshot.ref.child("balance").setValue(playerBalance).await()
+                            }
+                        }
                     }
                 }
-            }
-        }.addOnSuccessListener {
 
-            // Add history by date to database
-            val dateId = databaseDateRef.push().key
-            if (dateId != null){
+                // Add history by date to database
+                val dateId = databaseDateRef.push().key
+                if (dateId != null){
 
-                val dateToDB = mapOf("date" to currentDate.toString(),)
-                // Open new folder for current date
-                databaseDateRef.child(dateId).setValue(dateToDB).addOnSuccessListener {
+                    val dateToDB = mapOf("date" to currentDate.toString())
+                    // Open new folder for current date
+                    withContext(Dispatchers.IO) {
+                        databaseDateRef.child(dateId).setValue(dateToDB).await()
+                    }
+                    
                     val databaseCurrentDateRef = databaseDateRef.child(dateId).child("playerBalance")
 
                     //add all the user balance of this game
@@ -242,7 +253,9 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
                         val playerId = databaseCurrentDateRef.push().key
                         val player = mapOf("name" to playerName, "balance" to balance)
                         if (playerId != null) {
-                            databaseCurrentDateRef.child(playerId).setValue(player)
+                            withContext(Dispatchers.IO) {
+                                databaseCurrentDateRef.child(playerId).setValue(player).await()
+                            }
                         }
                     }
 
@@ -250,11 +263,12 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
                     resetPageData()
                     
                     // Clear saved session after successful game completion
-                    viewModelScope.launch {
-                        sessionRepository.clearSession()
-                        hasActiveSession.value = false
-                    }
+                    sessionRepository.clearSession()
+                    hasActiveSession.value = false
                 }
+            } catch (e: Exception) {
+                // Handle error appropriately
+                messageDialog.value = "Failed to update game data. Please try again."
             }
         }
     }
@@ -327,13 +341,13 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
         // For each player in the game check if name box contain correct name the money box contain only numbers
         for (index in 0..<numOfRows.intValue){
             if (nameOfPlayerArray[index].value==""||buyMoneyArray[index].value==""||returnMoneyArray[index].value==""){
-                massageDialog.value = "Please fill all the field."
+                messageDialog.value = "Please fill all the field."
                 return false
             }
             val isValid1 = buyMoneyArray[index].value.all { it.isDigit() }
             val isValid2 = returnMoneyArray[index].value.all { it.isDigit() }
             if (!isValid1||!isValid2) {
-                massageDialog.value = "Please enter numbers only."
+                messageDialog.value = "Please enter numbers only."
                 return false
             }
         }
@@ -344,18 +358,26 @@ class StartGameViewModel(application: Application): AndroidViewModel(application
      * Function to get all the player name from data base
      */
     fun getPlayerListToStartGame(){
-        loading.value = true // Set loading to true when starting
-        playerList.clear()
-        databaseRef.get().addOnSuccessListener { snapshot ->
-            for (playerSnapshot in snapshot.children) {
-                val playerName = playerSnapshot.child("name").getValue(String::class.java)
-                if (playerName != null && !playerList.contains(playerName) && !playerListChosen.contains(playerName)) {
-                    playerList.add(playerName)
+        viewModelScope.launch {
+            loading.value = true
+            playerList.clear()
+            
+            try {
+                val snapshot = withContext(Dispatchers.IO) {
+                    databaseRef.get().await()
                 }
+                
+                for (playerSnapshot in snapshot.children) {
+                    val playerName = playerSnapshot.child("name").getValue(String::class.java)
+                    if (playerName != null && !playerList.contains(playerName) && !playerListChosen.contains(playerName)) {
+                        playerList.add(playerName)
+                    }
+                }
+                loading.value = false
+            } catch (e: Exception) {
+                loading.value = false
+                // Handle error appropriately
             }
-            loading.value = false
-        }.addOnFailureListener {
-            loading.value = false
         }
     }
 

@@ -49,9 +49,9 @@ fun HomeScreen(navController: NavHostController) {
     // Get the current activity
     val activity = (LocalContext.current as? Activity)
 
-    // Handle back button press to go to the home screen
+    // Handle back button press to close the app properly
     BackHandler {
-        activity?.finish() // Close the activity, returning to the device's home screen
+        activity?.finishAffinity() // Close the app properly without memory leaks
     }
     BoxComponent(navController)
 }
@@ -75,7 +75,7 @@ fun BoxComponent(navController: NavHostController) {
                 navigationIcon = {
                     IconButton(onClick = {
                         if (context is Activity) {
-                            context.finish()
+                            context.finishAffinity()
                         }
                     } ) {
                         // Set back arrow to exit the app
@@ -109,10 +109,10 @@ fun BoxComponent(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(40.dp))
-                ButtonComponent("Start Game", navController, Routes.startGame)
-                ButtonComponent("Add New Player",navController,Routes.addUserScreen)
-                ButtonComponent("Player Balance", navController, Routes.playerBalance)
-                ButtonComponent("History By Day", navController, Routes.historyByDay)
+                ButtonComponent(context.getString(R.string.start_game), navController, Routes.startGame)
+                ButtonComponent(context.getString(R.string.add_new_player),navController,Routes.addUserScreen)
+                ButtonComponent(context.getString(R.string.player_balance), navController, Routes.playerBalance)
+                ButtonComponent(context.getString(R.string.history_by_day), navController, Routes.historyByDay)
             }
         }
     }

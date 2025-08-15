@@ -1,5 +1,6 @@
 package com.example.poker.screen
 
+import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +39,7 @@ import androidx.navigation.NavHostController
 import com.example.poker.data.PlayerBalanceViewModel
 import com.example.poker.route.Routes
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun PlayerBalanceScreen(navController: NavHostController){
     val viewModel: PlayerBalanceViewModel = viewModel(LocalContext.current as ComponentActivity) // Get ViewModel instance

@@ -120,13 +120,13 @@ fun HistoryByDayComponent(navController: NavHostController, historyByDayViewMode
         }
     }
 
-    // If view model set pop up massage, display it
-    if (historyByDayViewModel.massageDialog.value != null) {
+    // If view model set pop up message, display it
+    if (historyByDayViewModel.messageDialog.value != null) {
         AlertDialog(
-            onDismissRequest = { historyByDayViewModel.massageDialog.value = null },
-            text = { Text(historyByDayViewModel.massageDialog.value!!) },
+            onDismissRequest = { historyByDayViewModel.messageDialog.value = null },
+            text = { Text(historyByDayViewModel.messageDialog.value!!) },
             confirmButton = {
-                TextButton(onClick = { historyByDayViewModel.massageDialog.value = null }) {
+                TextButton(onClick = { historyByDayViewModel.messageDialog.value = null }) {
                     Text("OK")
                 }
             }

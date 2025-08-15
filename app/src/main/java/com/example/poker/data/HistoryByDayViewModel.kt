@@ -22,8 +22,8 @@ class HistoryByDayViewModel : ViewModel() {
     //data that your pick
     var dateSelected = mutableStateOf<Pair<String, String>>(Pair("Pick a date", ""))
 
-    // Massage to pup up in the screen
-    var massageDialog =  mutableStateOf<String?>(null)
+    // Message to popup in the screen
+    var messageDialog =  mutableStateOf<String?>(null)
 
     /**
      *  Function to get all date of game
@@ -39,7 +39,6 @@ class HistoryByDayViewModel : ViewModel() {
                 if (date != null) {
                     dateList.add(Pair(date,playerSnapshot.key.toString()))
                 }
-                //Log.d("getDateList", "Fetched date: $date")
             }
         }
         loading.value = false
@@ -50,7 +49,7 @@ class HistoryByDayViewModel : ViewModel() {
      */
     fun getPlayerBalanceByDate(){
         if (dateSelected.value.first == "Pick a date"){
-            massageDialog.value = "Please pick a date"
+            messageDialog.value = "Please pick a date"
             return
         }
         loading.value = true // Set loading to true when starting
@@ -59,12 +58,10 @@ class HistoryByDayViewModel : ViewModel() {
         val databaseRefForHistory = databaseRef.child(dateSelected.value.second).child("playerBalance")
         databaseRefForHistory.get().addOnSuccessListener { snapshot ->
             for (playerSnapshot in snapshot.children) {
-                Log.d("getDateList", "Fetched player : test 2")
                 val playerName = playerSnapshot.child("name").getValue(String::class.java)
                 val playerBalance = playerSnapshot.child("balance").getValue(Int::class.java)
                 if (playerName != null && playerBalance != null) {
                     playerList.add(Pair(playerName, playerBalance))
-                    Log.d("getDateList", "Fetched player : $playerName")
                 }
             }
             playerList.sortByDescending { it.second }
