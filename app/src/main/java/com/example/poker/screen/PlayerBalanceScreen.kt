@@ -53,7 +53,7 @@ fun PlayerBalanceScreen(
 
     LaunchedEffect(Unit) {
         if (!loading) {
-            viewModel.gerPlayerBalance()
+            viewModel.getPlayerBalance()
         }
     }
 

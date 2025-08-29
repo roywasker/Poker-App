@@ -58,7 +58,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `gerPlayerBalance should load players successfully`() = runTest {
+    fun `getPlayerBalance should load players successfully`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -77,7 +77,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify players were loaded
         assertEquals(mockPlayers, viewModel.playerList.value)
@@ -87,7 +87,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `gerPlayerBalance should handle empty player list`() = runTest {
+    fun `getPlayerBalance should handle empty player list`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -99,7 +99,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify empty list is handled
         assertTrue(viewModel.playerList.value.isEmpty())
@@ -109,7 +109,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `gerPlayerBalance should handle error gracefully`() = runTest {
+    fun `getPlayerBalance should handle error gracefully`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -121,7 +121,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify error is handled - list should remain empty
         assertTrue(viewModel.playerList.value.isEmpty())
@@ -131,7 +131,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `loading state should be set correctly during gerPlayerBalance`() = runTest {
+    fun `loading state should be set correctly during getPlayerBalance`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -148,7 +148,7 @@ class PlayerBalanceViewModelTest {
         // Loading should be false initially
         assertFalse(viewModel.loading.value)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Loading should be false after completion
         assertFalse(viewModel.loading.value)
@@ -156,7 +156,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `gerPlayerBalance should handle players with various balances`() = runTest {
+    fun `getPlayerBalance should handle players with various balances`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -176,7 +176,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify all players are loaded correctly
         assertEquals(5, viewModel.playerList.value.size)
@@ -192,7 +192,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `multiple calls to gerPlayerBalance should update player list`() = runTest {
+    fun `multiple calls to getPlayerBalance should update player list`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -217,19 +217,19 @@ class PlayerBalanceViewModelTest {
         viewModel = PlayerBalanceViewModel(playerRepository)
         
         // First load
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         assertEquals(firstList, viewModel.playerList.value)
         
         // Update mock to return secondList
         coEvery { playerRepository.getAllPlayers() } returns secondList
         
         // Second load
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         assertEquals(secondList, viewModel.playerList.value)
     }
 
     @Test
-    fun `gerPlayerBalance should handle large player lists`() = runTest {
+    fun `getPlayerBalance should handle large player lists`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -246,7 +246,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify large list is loaded correctly
         assertEquals(100, viewModel.playerList.value.size)
@@ -255,7 +255,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `gerPlayerBalance should handle duplicate player names`() = runTest {
+    fun `getPlayerBalance should handle duplicate player names`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -275,7 +275,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify all entries are loaded (including duplicates)
         assertEquals(4, viewModel.playerList.value.size)
@@ -283,7 +283,7 @@ class PlayerBalanceViewModelTest {
     }
 
     @Test
-    fun `gerPlayerBalance error should log error message`() = runTest {
+    fun `getPlayerBalance error should log error message`() = runTest {
         val unconfinedDispatcher = UnconfinedTestDispatcher(testScheduler)
         Dispatchers.setMain(unconfinedDispatcher)
         
@@ -296,7 +296,7 @@ class PlayerBalanceViewModelTest {
         
         viewModel = PlayerBalanceViewModel(playerRepository)
         
-        viewModel.gerPlayerBalance()
+        viewModel.getPlayerBalance()
         
         // Verify error is handled
         assertTrue(viewModel.playerList.value.isEmpty())

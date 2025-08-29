@@ -314,7 +314,7 @@ class StartGameViewModelTest {
         val result = viewModel.finishGameButton()
         
         assertFalse(result)
-        assertEquals("You have a extra of 50 shekels.", viewModel.messageDialog.value)
+        assertEquals("You have an extra of 50 shekels.", viewModel.messageDialog.value)
     }
 
     @Test

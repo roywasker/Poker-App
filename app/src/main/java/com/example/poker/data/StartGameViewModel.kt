@@ -107,6 +107,12 @@ class StartGameViewModel @Inject constructor(
 
         // For all player calculation the balance in the end of the game
         for (index in 0..<numOfRows.intValue){
+            // Ensure index is within array bounds
+            if (index >= nameOfPlayerArray.size || index >= buyMoneyArray.size || index >= returnMoneyArray.size) {
+                _messageDialog.value = "Error: Invalid player index $index"
+                return false
+            }
+            
             try {
                 val buyAmount = buyMoneyArray[index].value.toIntOrNull() ?: 0
                 val returnAmount = returnMoneyArray[index].value.toIntOrNull() ?: 0
@@ -121,7 +127,7 @@ class StartGameViewModel @Inject constructor(
 
         // If sum money is negative we have extra money
         if (sumMoney<0){
-            _messageDialog.value = "You have a extra of ${abs(sumMoney)} shekels."
+            _messageDialog.value = "You have an extra of ${abs(sumMoney)} shekels."
             return false
 
         // If sum money is positive we have deficit money

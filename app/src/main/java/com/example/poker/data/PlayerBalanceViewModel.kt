@@ -29,7 +29,7 @@ class PlayerBalanceViewModel @Inject constructor(
     /**
      * Function to get all player balance
      */
-    fun gerPlayerBalance(){
+    fun getPlayerBalance(){
         viewModelScope.launch {
             _loading.value = true
             
@@ -40,7 +40,7 @@ class PlayerBalanceViewModel @Inject constructor(
                 _playerList.value = players
                 _loading.value = false
             } catch (e: Exception) {
-                Log.e(TAG, "gerPlayerBalance: $e")
+                Log.e(TAG, "getPlayerBalance: $e")
                 _loading.value = false
             }
         }

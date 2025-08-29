@@ -20,8 +20,9 @@ class GameRepositoryImpl @Inject constructor(
         
         for (playerSnapshot in snapshot.children) {
             val date = playerSnapshot.child("date").getValue(String::class.java)
-            if (date != null) {
-                dateList.add(Pair(date, playerSnapshot.key.toString()))
+            val key = playerSnapshot.key
+            if (date != null && key != null) {
+                dateList.add(Pair(date, key))
             }
         }
         
