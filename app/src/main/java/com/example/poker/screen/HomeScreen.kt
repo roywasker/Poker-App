@@ -113,6 +113,7 @@ fun BoxComponent(navController: NavHostController) {
                 ButtonComponent(context.getString(R.string.add_new_player),navController,Routes.addUserScreen)
                 ButtonComponent(context.getString(R.string.player_balance), navController, Routes.playerBalance)
                 ButtonComponent(context.getString(R.string.history_by_day), navController, Routes.historyByDay)
+                ButtonComponent(context.getString(R.string.player_statistics), navController, Routes.playerStatistics)
             }
         }
     }

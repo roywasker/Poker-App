@@ -9,4 +9,5 @@ object Routes {
     var startGame = "StartGame"
     var historyByDay = "HistoryByDay"
     var TransferLog = "TransferLog"
+    var playerStatistics = "PlayerStatistics"
 }
