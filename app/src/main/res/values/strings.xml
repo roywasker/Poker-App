@@ -6,6 +6,7 @@
     <string name="add_new_player">Add New Player</string>
     <string name="player_balance">Player Balance</string>
     <string name="history_by_day">History By Day</string>
+    <string name="player_statistics">Player Statistics</string>
     <string name="finish_game">Finish Game</string>
     <string name="clear_session">Clear Session</string>
     <string name="add_player">Add Player</string>

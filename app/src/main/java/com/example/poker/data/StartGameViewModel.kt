@@ -37,11 +37,11 @@ class StartGameViewModel @Inject constructor(
     // Define array of 9 how much chip player return in the end of the game
     var returnMoneyArray = Array(9) { mutableStateOf("") }
 
-    //List of all the player that have user in the app
-    var playerList: MutableList<String> = mutableListOf()
+    //List of all the player that have user in the app - Thread-safe
+    var playerList = MutableStateFlow<List<String>>(emptyList())
 
-    //List of all the player that chosen in this current game
-    private var playerListChosen: MutableList<String> = mutableListOf()
+    //List of all the player that chosen in this current game - Thread-safe
+    private var playerListChosen = MutableStateFlow<List<String>>(emptyList())
 
     // Message to popup in the screen - using StateFlow
     private val _messageDialog = MutableStateFlow<String?>(null)
@@ -70,9 +70,9 @@ class StartGameViewModel @Inject constructor(
      */
     fun addPlayerToList(name : String){
 
-        // Remove from the list of all available player
-        playerList.remove(name)
-        playerListChosen.add(name)
+        // Remove from the list of all available player - Thread-safe update
+        playerList.value = playerList.value.filter { it != name }
+        playerListChosen.value = playerListChosen.value + name
         
         // Save session after any change
         saveCurrentSession()
@@ -83,9 +83,9 @@ class StartGameViewModel @Inject constructor(
      */
     fun removePlayerFromList(name : String){
 
-        // Add to the list of all available player
-        playerList.add(name)
-        playerListChosen.remove(name)
+        // Add to the list of all available player - Thread-safe update
+        playerList.value = playerList.value + name
+        playerListChosen.value = playerListChosen.value.filter { it != name }
         
         // Save session after any change
         saveCurrentSession()
@@ -106,9 +106,16 @@ class StartGameViewModel @Inject constructor(
 
         // For all player calculation the balance in the end of the game
         for (index in 0..<numOfRows.intValue){
-            val currPlayerBalance = returnMoneyArray[index].value.toInt() - buyMoneyArray[index].value.toInt()
-            balanceAfterGame[index] = currPlayerBalance
-            sumMoney += currPlayerBalance
+            try {
+                val buyAmount = buyMoneyArray[index].value.toIntOrNull() ?: 0
+                val returnAmount = returnMoneyArray[index].value.toIntOrNull() ?: 0
+                val currPlayerBalance = returnAmount - buyAmount
+                balanceAfterGame[index] = currPlayerBalance
+                sumMoney += currPlayerBalance
+            } catch (e: Exception) {
+                _messageDialog.value = "Invalid amount entered for ${nameOfPlayerArray[index].value}"
+                return false
+            }
         }
 
         // If sum money is negative we have extra money
@@ -135,7 +142,7 @@ class StartGameViewModel @Inject constructor(
     private fun resetPageData(){
         buyMoneyArray = Array(9) { mutableStateOf("")}
         returnMoneyArray = Array(9) { mutableStateOf("")}
-        playerListChosen.clear()
+        playerListChosen.value = emptyList()
         numOfRows = mutableIntStateOf(4)
         nameOfPlayerArray = Array(9) { mutableStateOf("") }
         getPlayerListToStartGame()
@@ -167,14 +174,15 @@ class StartGameViewModel @Inject constructor(
             buyMoneyArray = data.buyAmounts
             returnMoneyArray = data.returnAmounts
             
-            // Rebuild chosen players list
-            playerListChosen.clear()
+            // Rebuild chosen players list - Thread-safe
+            val chosenPlayers = mutableListOf<String>()
             for (i in 0 until data.numOfRows) {
                 val playerName = data.playerNames[i].value
                 if (playerName.isNotEmpty()) {
-                    playerListChosen.add(playerName)
+                    chosenPlayers.add(playerName)
                 }
             }
+            playerListChosen.value = chosenPlayers
         }
     }
 
@@ -321,17 +329,16 @@ class StartGameViewModel @Inject constructor(
     fun getPlayerListToStartGame(){
         viewModelScope.launch {
             _loading.value = true
-            playerList.clear()
             
             try {
                 val players = withContext(Dispatchers.IO) {
                     gameRepository.getPlayersForStartGame()
                 }
                 
-                for (playerName in players) {
-                    if (!playerList.contains(playerName) && !playerListChosen.contains(playerName)) {
-                        playerList.add(playerName)
-                    }
+                // Thread-safe update
+                val currentChosen = playerListChosen.value
+                playerList.value = players.filter { playerName -> 
+                    !currentChosen.contains(playerName)
                 }
                 _loading.value = false
             } catch (e: Exception) {
@@ -347,9 +354,9 @@ class StartGameViewModel @Inject constructor(
     fun removeRow(index : Int){
         val playerName = nameOfPlayerArray[index].value
 
-        // If the player that chosen in this row not contain in player list add him
-        if (!playerList.contains(playerName)) {
-            playerList.add(playerName)
+        // If the player that chosen in this row not contain in player list add him - Thread-safe
+        if (playerName.isNotEmpty() && !playerList.value.contains(playerName)) {
+            playerList.value = playerList.value + playerName
         }
 
         // reset the variable to default value

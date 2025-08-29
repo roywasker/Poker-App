@@ -109,4 +109,157 @@ class GameRepositoryImpl @Inject constructor(
             false
         }
     }
+    
+    override suspend fun getPlayerHistoricalData(playerName: String): List<Pair<String, Int>> {
+        val snapshot = dateListRef.get().await()
+        val playerHistory = mutableListOf<Pair<String, Int>>()
+        
+        for (dateSnapshot in snapshot.children) {
+            val date = dateSnapshot.child("date").getValue(String::class.java)
+            val playerBalanceSnapshot = dateSnapshot.child("playerBalance")
+            
+            for (playerSnapshot in playerBalanceSnapshot.children) {
+                val name = playerSnapshot.child("name").getValue(String::class.java)
+                val balance = playerSnapshot.child("balance").getValue(Int::class.java)
+                
+                if (name == playerName && date != null && balance != null) {
+                    playerHistory.add(Pair(date, balance))
+                }
+            }
+        }
+        
+        return playerHistory.sortedBy { it.first }
+    }
+    
+    override suspend fun getPlayerStatistics(playerName: String): PlayerStatistics? {
+        return try {
+            // Get current balance from players reference
+            val playerSnapshot = playersRef.get().await()
+            var currentBalance = 0
+            
+            for (player in playerSnapshot.children) {
+                val name = player.child("name").getValue(String::class.java)
+                if (name == playerName) {
+                    currentBalance = player.child("balance").getValue(Int::class.java) ?: 0
+                    break
+                }
+            }
+            
+            // Get historical data
+            val historicalData = getPlayerHistoricalData(playerName)
+            
+            if (historicalData.isEmpty()) {
+                return PlayerStatistics(
+                    playerName = playerName,
+                    totalGames = 0,
+                    gamesWon = 0,
+                    gamesLost = 0,
+                    totalWinnings = currentBalance,
+                    currentBalance = currentBalance,
+                    averageWinLoss = 0.0,
+                    bestGame = 0,
+                    worstGame = 0,
+                    currentStreak = 0,
+                    longestWinStreak = 0,
+                    longestLossStreak = 0
+                )
+            }
+            
+            val totalGames = historicalData.size
+            val gamesWon = historicalData.count { it.second > 0 }
+            val gamesLost = historicalData.count { it.second < 0 }
+            val totalWinnings = historicalData.sumOf { it.second }
+            val averageWinLoss = if (totalGames > 0) totalWinnings.toDouble() / totalGames else 0.0
+            val bestGame = historicalData.maxOfOrNull { it.second } ?: 0
+            val worstGame = historicalData.minOfOrNull { it.second } ?: 0
+            
+            // Calculate streaks
+            val streaks = calculateStreaks(historicalData.map { it.second })
+            
+            PlayerStatistics(
+                playerName = playerName,
+                totalGames = totalGames,
+                gamesWon = gamesWon,
+                gamesLost = gamesLost,
+                totalWinnings = totalWinnings,
+                currentBalance = currentBalance,
+                averageWinLoss = averageWinLoss,
+                bestGame = bestGame,
+                worstGame = worstGame,
+                currentStreak = streaks.currentStreak,
+                longestWinStreak = streaks.longestWinStreak,
+                longestLossStreak = streaks.longestLossStreak
+            )
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "getPlayerStatistics: $e")
+            null
+        }
+    }
+    
+    override suspend fun getAllPlayersStatistics(): List<PlayerStatistics> {
+        return try {
+            val players = getPlayersForStartGame()
+            val allStats = mutableListOf<PlayerStatistics>()
+            
+            for (player in players) {
+                getPlayerStatistics(player)?.let { stats ->
+                    allStats.add(stats)
+                }
+            }
+            
+            allStats.sortedByDescending { it.currentBalance }
+        } catch (e: Exception) {
+            Log.e(TAG, "getAllPlayersStatistics: $e")
+            emptyList()
+        }
+    }
+    
+    private data class StreakData(
+        val currentStreak: Int,
+        val longestWinStreak: Int,
+        val longestLossStreak: Int
+    )
+    
+    private fun calculateStreaks(gameResults: List<Int>): StreakData {
+        if (gameResults.isEmpty()) {
+            return StreakData(0, 0, 0)
+        }
+        
+        var currentStreak = 0
+        var longestWinStreak = 0
+        var longestLossStreak = 0
+        var currentWinStreak = 0
+        var currentLossStreak = 0
+        
+        for (result in gameResults) {
+            when {
+                result > 0 -> {
+                    if (currentStreak >= 0) {
+                        currentStreak++
+                    } else {
+                        currentStreak = 1
+                    }
+                    currentWinStreak++
+                    longestWinStreak = maxOf(longestWinStreak, currentWinStreak)
+                    currentLossStreak = 0
+                }
+                result < 0 -> {
+                    if (currentStreak <= 0) {
+                        currentStreak--
+                    } else {
+                        currentStreak = -1
+                    }
+                    currentLossStreak++
+                    longestLossStreak = maxOf(longestLossStreak, currentLossStreak)
+                    currentWinStreak = 0
+                }
+                else -> {
+                    // Tie game - doesn't affect streaks
+                }
+            }
+        }
+        
+        return StreakData(currentStreak, longestWinStreak, longestLossStreak)
+    }
 }

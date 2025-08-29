@@ -219,11 +219,10 @@ fun TitleTextComponent(){
     }
 }
 
-@SuppressLint("MutableCollectionMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropDown(indexInArray: Int, viewModel: StartGameViewModel){
-    val list by remember { mutableStateOf(viewModel.playerList) }
+    val list by viewModel.playerList.collectAsState()
     var isExpanded by remember { mutableStateOf(false) }
     var selectedPlayer by remember { mutableStateOf(viewModel.nameOfPlayerArray[indexInArray].value) }
 
@@ -280,10 +279,9 @@ fun PlayerDataComponent(index: Int, viewModel: StartGameViewModel) {
 }
 
 
-@SuppressLint("UnrememberedMutableState")
 @Composable
 fun BuyFieldComponent(index: Int, viewModel: StartGameViewModel) {
-    val money by viewModel.buyMoneyArray[index]
+    val money by remember { viewModel.buyMoneyArray[index] }
     OutlinedTextField(
         value = money,
         modifier = Modifier
@@ -301,10 +299,9 @@ fun BuyFieldComponent(index: Int, viewModel: StartGameViewModel) {
     )
 }
 
-@SuppressLint("UnrememberedMutableState")
 @Composable
 fun ReturnFieldComponent(index: Int, viewModel: StartGameViewModel) {
-    val money by viewModel.returnMoneyArray[index]
+    val money by remember { viewModel.returnMoneyArray[index] }
     OutlinedTextField(
         value = money,
         modifier = Modifier

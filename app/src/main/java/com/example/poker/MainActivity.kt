@@ -11,6 +11,7 @@ import com.example.poker.screen.AddUserScreen
 import com.example.poker.screen.HistoryByDayScreen
 import com.example.poker.screen.HomeScreen
 import com.example.poker.screen.PlayerBalanceScreen
+import com.example.poker.screen.PlayerStatisticsScreen
 import com.example.poker.screen.StartGameScreen
 import com.example.poker.screen.TransferLogScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -39,6 +40,9 @@ class MainActivity : ComponentActivity() {
                 }
                 composable(Routes.historyByDay){
                     HistoryByDayScreen(navController)
+                }
+                composable(Routes.playerStatistics){
+                    PlayerStatisticsScreen(navController)
                 }
             })
         }

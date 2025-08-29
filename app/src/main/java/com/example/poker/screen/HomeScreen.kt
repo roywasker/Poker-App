@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,10 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,7 +76,7 @@ fun BoxComponent(navController: NavHostController) {
                     } ) {
                         // Set back arrow to exit the app
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
                             modifier = Modifier
                                 .padding(start = 6.dp, end = 8.dp)
@@ -105,14 +101,15 @@ fun BoxComponent(navController: NavHostController) {
                     .align(Alignment.TopCenter)
             )
             Column(
-                verticalArrangement = Arrangement.spacedBy(34.dp),
+                verticalArrangement = Arrangement.spacedBy(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(80.dp))
                 ButtonComponent(context.getString(R.string.start_game), navController, Routes.startGame)
                 ButtonComponent(context.getString(R.string.add_new_player),navController,Routes.addUserScreen)
                 ButtonComponent(context.getString(R.string.player_balance), navController, Routes.playerBalance)
                 ButtonComponent(context.getString(R.string.history_by_day), navController, Routes.historyByDay)
+                ButtonComponent(context.getString(R.string.player_statistics), navController, Routes.playerStatistics)
             }
         }
     }
