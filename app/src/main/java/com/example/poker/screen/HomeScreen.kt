@@ -26,10 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,10 +101,10 @@ fun BoxComponent(navController: NavHostController) {
                     .align(Alignment.TopCenter)
             )
             Column(
-                verticalArrangement = Arrangement.spacedBy(34.dp),
+                verticalArrangement = Arrangement.spacedBy(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(80.dp))
                 ButtonComponent(context.getString(R.string.start_game), navController, Routes.startGame)
                 ButtonComponent(context.getString(R.string.add_new_player),navController,Routes.addUserScreen)
                 ButtonComponent(context.getString(R.string.player_balance), navController, Routes.playerBalance)
