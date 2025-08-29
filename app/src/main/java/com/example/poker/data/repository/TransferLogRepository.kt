@@ -1,4 +1,4 @@
-package com.example.poker.data
+package com.example.poker.data.repository
 
 import androidx.lifecycle.MutableLiveData
 

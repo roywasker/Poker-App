@@ -1,7 +1,9 @@
-package com.example.poker.data
+package com.example.poker.data.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
+import com.example.poker.data.StartGameViewModel
+import com.example.poker.data.repository.TransferLogRepository
 import com.example.poker.data.database.PlayerSessionRepository
 import com.example.poker.data.database.SessionData
 import com.example.poker.data.repository.GameRepository
@@ -15,7 +17,6 @@ import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest

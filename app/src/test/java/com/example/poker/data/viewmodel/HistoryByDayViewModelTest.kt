@@ -1,6 +1,7 @@
-package com.example.poker.data
+package com.example.poker.data.viewmodel
 
 import android.util.Log
+import com.example.poker.data.HistoryByDayViewModel
 import com.example.poker.data.repository.GameRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
