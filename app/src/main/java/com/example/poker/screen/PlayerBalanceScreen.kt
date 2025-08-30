@@ -37,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.PlayerBalanceViewModel
 import com.example.poker.route.Routes
+import com.example.poker.screen.components.NetworkErrorDialog
 
 @SuppressLint("ContextCastToActivity")
 @Composable
@@ -121,4 +122,15 @@ fun PlayerBalanceComponent(navController: NavHostController, viewModel: PlayerBa
             }
         }
     }
+    
+    // Show network error dialog with retry option
+    val networkError by viewModel.networkError.collectAsState()
+    NetworkErrorDialog(
+        errorState = networkError,
+        onRetry = { viewModel.retryNetworkOperation() },
+        onDismiss = { 
+            viewModel.clearNetworkError()
+            navController.navigate(Routes.homeScreen)
+        }
+    )
 }

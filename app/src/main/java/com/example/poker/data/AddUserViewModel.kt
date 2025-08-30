@@ -1,168 +1,164 @@
 package com.example.poker.data
 
-import android.content.ContentValues.TAG
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import com.example.poker.data.base.BaseViewModel
 import com.example.poker.data.repository.UserRepository
+import com.example.poker.util.ValidationResult
+import com.example.poker.util.ValidationUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+/**
+ * ViewModel for adding and managing users
+ * Refactored to use StateFlow and proper validation
+ */
 @HiltViewModel
 class AddUserViewModel @Inject constructor(
     private val userRepository: UserRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
-    var userName = mutableStateOf("")
-
-    //List of all the player that have user in the app
-    var playerList: MutableList<String> = mutableListOf()
-
-    var userToChange = mutableStateOf("")
-
-    var moneyChange = mutableStateOf("")
-
-    // Message to popup in the screen - using StateFlow
-    private val _messageDialog = MutableStateFlow<String?>(null)
-    val messageDialog: StateFlow<String?> = _messageDialog.asStateFlow()
-
+    // User input states - using StateFlow instead of mutableStateOf
+    private val _userName = MutableStateFlow("")
+    val userName: StateFlow<String> = _userName.asStateFlow()
+    
+    private val _userToChange = MutableStateFlow("")
+    val userToChange: StateFlow<String> = _userToChange.asStateFlow()
+    
+    private val _moneyChange = MutableStateFlow("")
+    val moneyChange: StateFlow<String> = _moneyChange.asStateFlow()
+    
+    // Player list - using StateFlow for better performance
+    private val _playerList = MutableStateFlow<List<String>>(emptyList())
+    val playerList: StateFlow<List<String>> = _playerList.asStateFlow()
+    
+    init {
+        loadPlayerList()
+    }
+    
     /**
-     * Function to save the user name that user enter
+     * Update user name input
      */
     fun onUserNameChange(newName: String) {
-        userName.value = newName
+        // Sanitize input to prevent injection
+        _userName.value = ValidationUtils.sanitizeInput(newName)
+    }
+    
+    /**
+     * Update user to change selection
+     */
+    fun onUserToChangeSelected(user: String) {
+        _userToChange.value = user
+    }
+    
+    /**
+     * Update money change amount
+     */
+    fun onMoneyChangeUpdate(amount: String) {
+        // Only allow numeric input
+        _moneyChange.value = amount.filter { it.isDigit() || it == '-' }
     }
 
+    
     /**
-     * Function to clear message dialog
+     * Load player list from repository with timeout handling
      */
-    fun clearMessageDialog() {
-        _messageDialog.value = null
-    }
-
-    /**
-     *  Function to get all the user name that registered in the data base
-     */
-    fun getPlayerList(){
-        viewModelScope.launch {
-            try {
-                val users = withContext(Dispatchers.IO) {
-                    userRepository.getUserList()
+    private fun loadPlayerList() {
+        launchWithLoading(
+            onError = { e ->
+                if (e is kotlinx.coroutines.TimeoutCancellationException || 
+                    e.message?.contains("timeout", ignoreCase = true) == true) {
+                    showNetworkError(
+                        "Connection timeout. Please check your internet connection.",
+                        retryAction = { loadPlayerList() }
+                    )
+                } else {
+                    showMessage("Failed to load players: ${e.message}")
                 }
-                playerList.clear()
-                playerList.addAll(users)
-            } catch (e: Exception) {
-                Log.e(TAG, "getPlayerList: $e")
-                _messageDialog.value = "Failed to load player list"
             }
+        ) {
+            val players = userRepository.getUserList()
+            _playerList.value = players.sorted() // Sort alphabetically
         }
     }
-
+    
     /**
-     * Function to add new user to the database
+     * Add a new user with validation
      */
     fun addUser() {
-        // If player is already in the list popup a message
-        if (playerList.contains(userName.value)){
-            _messageDialog.value = "Player ${userName.value} is already in the list."
-            return
-        }
+        val name = _userName.value.trim()
 
-        // If user try to enter empty name to the list popup a message
-        if (userName.value.isBlank()){
-            _messageDialog.value = "Please enter a name."
+        // Validate username
+        when (val validation = ValidationUtils.validateUsername(name)) {
+            is ValidationResult.Error -> {
+                showMessage(validation.message)
+                return
+            }
+            is ValidationResult.Success -> {
+                // Continue with adding user
+            }
+        }
+        
+        // Check if user already exists locally
+        if (_playerList.value.any { it.equals(name, ignoreCase = true) }) {
+            showMessage("User '$name' already exists")
             return
         }
         
-        // Validate name length and characters
-        if (userName.value.length > 50) {
-            _messageDialog.value = "Name is too long. Maximum 50 characters."
-            return
-        }
-        
-        if (userName.value.length < 2) {
-            _messageDialog.value = "Name is too short. Minimum 2 characters."
-            return
-        }
-
-        viewModelScope.launch {
-            try {
-                val success = withContext(Dispatchers.IO) {
-                    userRepository.addUser(userName.value, 0)
-                }
-                
-                if (success) {
-                    getPlayerList() // Refresh the player list after adding a new user
-                    _messageDialog.value = "Player ${userName.value} added to the list."
-                    userName.value = "" // clear user name box
+        // Add user
+        launchWithLoading(
+            onError = { e ->
+                if (e is kotlinx.coroutines.TimeoutCancellationException || 
+                    e.message?.contains("timeout", ignoreCase = true) == true) {
+                    showNetworkError(
+                        "Connection timeout while adding user. Please check your internet connection.",
+                        retryAction = { addUser() }
+                    )
                 } else {
-                    _messageDialog.value = "Player ${userName.value} is already in the list."
+                    showMessage("Failed to add user: ${e.message}")
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "addUser: $e")
-                _messageDialog.value = "Failed to add player ${userName.value}\n Try later"
+            }
+        ) {
+            val success = userRepository.addUser(name, 0)
+            if (success) {
+                showMessage("User '$name' added successfully")
+                clearInputs()
+                loadPlayerList() // Reload the list
+            } else {
+                showMessage("Failed to add user. User may already exist.")
             }
         }
     }
-
-    fun changeUserValue(){
-        if (moneyChange.value.isBlank() || userToChange.value.isBlank()){
-            _messageDialog.value = "Enter all the field "
-            return
-        }
-        
-        val moneyChangeInt = try {
-            moneyChange.value.toInt()
-        } catch (e: NumberFormatException) {
-            Log.e(TAG, "changeUserValue: $e")
-            _messageDialog.value = "Please enter a valid number"
-            return
-        }
-        
-        if (moneyChangeInt < 0 ){
-            _messageDialog.value = "It is not possible to subtract a negative amount from a user."
-            return
-        }
-
-        viewModelScope.launch {
-            try {
-                // Get current balance and calculate new balance
-                val users = withContext(Dispatchers.IO) {
-                    userRepository.getUserList()
-                }
-                
-                if (!users.contains(userToChange.value)) {
-                    _messageDialog.value = "User not found"
-                    return@launch
-                }
-                
-                // For this operation we're reducing money, so we need to get current balance
-                // and subtract the amount. Since we don't have a method to get specific balance,
-                // we'll use the generic changeUserBalance method with the new total
-                val success = withContext(Dispatchers.IO) {
-                    // This is a simplified approach - ideally we'd have a method to get current balance
-                    // For now, we'll assume the UI shows current balance and user enters the new total
-                    userRepository.changeUserBalance(userToChange.value, moneyChangeInt)
-                }
-                
-                if (success) {
-                    _messageDialog.value = "Balance successfully updated"
-                    userToChange.value = ""
-                    moneyChange.value = ""
-                } else {
-                    _messageDialog.value = "Failed to update user balance"
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "changeUserValue: $e")
-                _messageDialog.value = "Failed to update balance"
-            }
-        }
+    
+    /**
+     * Clear all input fields
+     */
+    private fun clearInputs() {
+        _userName.value = ""
+        clearBalanceInputs()
+    }
+    
+    /**
+     * Clear balance change inputs
+     */
+    private fun clearBalanceInputs() {
+        _userToChange.value = ""
+        _moneyChange.value = ""
+    }
+    
+    /**
+     * Refresh player list
+     */
+    fun refreshPlayerList() {
+        loadPlayerList()
+    }
+    
+    /**
+     * Get the list of players for the game
+     */
+    fun getUserList() {
+        loadPlayerList()
     }
 }
