@@ -39,21 +39,31 @@ class PlayerSessionRepository(private val dao: PlayerSessionDao) {
     suspend fun clearSession() = dao.clearSession()
     
     private fun arrayToJson(array: Array<MutableState<String>>): String {
-        val jsonArray = JSONArray()
-        array.forEach { state ->
-            jsonArray.put(state.value)
+        return try {
+            val jsonArray = JSONArray()
+            array.forEach { state ->
+                jsonArray.put(state.value)
+            }
+            jsonArray.toString()
+        } catch (e: Exception) {
+            // If JSON creation fails, return empty JSON array
+            "[]"
         }
-        return jsonArray.toString()
     }
     
     private fun jsonToMutableStateArray(jsonString: String): Array<MutableState<String>> {
-        val jsonArray = JSONArray(jsonString)
-        return Array(9) { index ->
-            if (index < jsonArray.length()) {
-                mutableStateOf(jsonArray.getString(index))
-            } else {
-                mutableStateOf("")
+        return try {
+            val jsonArray = JSONArray(jsonString)
+            Array(9) { index ->
+                if (index < jsonArray.length()) {
+                    mutableStateOf(jsonArray.getString(index))
+                } else {
+                    mutableStateOf("")
+                }
             }
+        } catch (e: Exception) {
+            // If JSON parsing fails, return array of empty strings
+            Array(9) { mutableStateOf("") }
         }
     }
 }

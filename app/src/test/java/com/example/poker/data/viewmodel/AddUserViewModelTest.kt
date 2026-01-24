@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.delay
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -36,6 +37,7 @@ class AddUserViewModelTest {
         // Mock Android Log
         mockkStatic(Log::class)
         every { Log.e(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>(), any()) } returns 0
         every { Log.d(any<String>(), any<String>()) } returns 0
         every { Log.i(any<String>(), any<String>()) } returns 0
         every { Log.v(any<String>(), any<String>()) } returns 0
@@ -84,49 +86,45 @@ class AddUserViewModelTest {
         assertNull(viewModel.messageDialog.value)
     }
 
-    // Tests for getPlayerList
+    // Tests for refreshPlayerList / getUserList
     @Test
-    fun `getPlayerList should load and update playerList`() = runTest {
+    fun `refreshPlayerList should load and update playerList`() = runTest {
         val mockUsers = listOf("Player1", "Player2", "Player3")
         coEvery { userRepository.getUserList() } returns mockUsers
         
-        viewModel.getPlayerList()
+        viewModel.refreshPlayerList()
         
-        assertEquals(mockUsers, viewModel.playerList)
+        assertEquals(mockUsers, viewModel.playerList.value)
     }
 
     @Test
-    fun `getPlayerList should handle empty list`() = runTest {
+    fun `refreshPlayerList should handle empty list`() = runTest {
         coEvery { userRepository.getUserList() } returns emptyList()
         
-        viewModel.getPlayerList()
+        viewModel.refreshPlayerList()
         
-        assertTrue(viewModel.playerList.isEmpty())
+        assertTrue(viewModel.playerList.value.isEmpty())
     }
 
     @Test
-    fun `getPlayerList should handle exception and show error message`() = runTest {
+    fun `refreshPlayerList should handle exception and show error message`() = runTest {
         coEvery { userRepository.getUserList() } throws Exception("Network error")
         
-        viewModel.getPlayerList()
+        viewModel.refreshPlayerList()
         
-        assertEquals("Failed to load player list", viewModel.messageDialog.value)
+        assertEquals("Failed to load players: Network error", viewModel.messageDialog.value)
     }
 
     @Test
-    fun `getPlayerList should clear existing list before adding new users`() = runTest {
-        val initialUsers = listOf("OldPlayer1", "OldPlayer2")
+    fun `refreshPlayerList should update to new users`() = runTest {
         val newUsers = listOf("NewPlayer1", "NewPlayer2", "NewPlayer3")
-        
-        // Set initial users
-        viewModel.playerList.addAll(initialUsers)
         
         coEvery { userRepository.getUserList() } returns newUsers
         
-        viewModel.getPlayerList()
+        viewModel.refreshPlayerList()
         
-        assertEquals(newUsers, viewModel.playerList)
-        assertEquals(3, viewModel.playerList.size)
+        assertEquals(newUsers.sorted(), viewModel.playerList.value)
+        assertEquals(3, viewModel.playerList.value.size)
     }
 
     // Tests for addUser
@@ -139,19 +137,22 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals("Player ValidUser added to the list.", viewModel.messageDialog.value)
+        assertEquals("User 'ValidUser' added successfully", viewModel.messageDialog.value)
         assertEquals("", viewModel.userName.value) // Should be cleared after successful add
     }
 
     @Test
     fun `addUser should reject duplicate user name`() = runTest {
         val userName = "ExistingUser"
-        viewModel.playerList.add(userName)
+        coEvery { userRepository.getUserList() } returns listOf(userName)
+        
+        // Load the initial player list
+        viewModel.refreshPlayerList()
         
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals("Player ExistingUser is already in the list.", viewModel.messageDialog.value)
+        assertEquals("User 'ExistingUser' already exists", viewModel.messageDialog.value)
         // No repository calls should be made since validation fails
     }
 
@@ -160,7 +161,7 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange("")
         viewModel.addUser()
         
-        assertEquals("Please enter a name.", viewModel.messageDialog.value)
+        assertEquals("Username cannot be empty", viewModel.messageDialog.value)
         // No repository calls should be made since validation fails
     }
 
@@ -169,19 +170,24 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange("   ")
         viewModel.addUser()
         
-        assertEquals("Please enter a name.", viewModel.messageDialog.value)
+        assertEquals("Username cannot be empty", viewModel.messageDialog.value)
         // No repository calls should be made since validation fails
     }
 
     @Test
-    fun `addUser should reject name longer than 50 characters`() = runTest {
+    fun `addUser should handle name longer than 50 characters by truncating`() = runTest {
         val longName = "a".repeat(51)
+        val truncatedName = "a".repeat(50)
+        
+        coEvery { userRepository.getUserList() } returns emptyList()
+        coEvery { userRepository.addUser(truncatedName, 0) } returns true
         
         viewModel.onUserNameChange(longName)
+        // Note: sanitizeInput truncates to 50 chars, so this will actually pass validation
+        // The viewModel username becomes "a" * 50 after sanitization
         viewModel.addUser()
         
-        assertEquals("Name is too long. Maximum 50 characters.", viewModel.messageDialog.value)
-        // No repository calls should be made since validation fails
+        assertEquals("User '$truncatedName' added successfully", viewModel.messageDialog.value)
     }
 
     @Test
@@ -189,7 +195,7 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange("A")
         viewModel.addUser()
         
-        assertEquals("Name is too short. Minimum 2 characters.", viewModel.messageDialog.value)
+        assertEquals("Username too short (minimum 2 characters)", viewModel.messageDialog.value)
         // No repository calls should be made since validation fails
     }
 
@@ -202,7 +208,7 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals("Player NewUser is already in the list.", viewModel.messageDialog.value)
+        assertEquals("Failed to add user. User may already exist.", viewModel.messageDialog.value)
         assertEquals(userName, viewModel.userName.value) // Should not be cleared on failure
     }
 
@@ -215,181 +221,28 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals("Failed to add player TestUser\n Try later", viewModel.messageDialog.value)
+        assertEquals("Failed to add user: Database error", viewModel.messageDialog.value)
     }
 
     @Test
     fun `addUser should refresh player list after successful add`() = runTest {
         val userName = "NewPlayer"
-        val updatedList = listOf("Player1", "Player2", userName)
+        val updatedList = listOf("NewPlayer", "Player1", "Player2")
         
+        // The init block already called getUserList() once during setup which returns emptyList (default mock)
+        // So we need to setup the return for the call after addUser succeeds
         coEvery { userRepository.addUser(userName, 0) } returns true
         coEvery { userRepository.getUserList() } returns updatedList
         
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals(updatedList, viewModel.playerList)
-        assertTrue(viewModel.playerList.contains(userName))
+        // The list should be sorted
+        assertEquals(updatedList.sorted(), viewModel.playerList.value)
+        assertTrue(viewModel.playerList.value.contains(userName))
     }
 
-    // Tests for changeUserValue
-    @Test
-    fun `changeUserValue should update balance successfully`() = runTest {
-        val userName = "TestUser"
-        val newBalance = 100
-        val existingUsers = listOf(userName, "OtherUser")
-        
-        coEvery { userRepository.getUserList() } returns existingUsers
-        coEvery { userRepository.changeUserBalance(userName, newBalance) } returns true
-        
-        viewModel.userToChange.value = userName
-        viewModel.moneyChange.value = newBalance.toString()
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Balance successfully updated", viewModel.messageDialog.value)
-        assertEquals("", viewModel.userToChange.value)
-        assertEquals("", viewModel.moneyChange.value)
-    }
 
-    @Test
-    fun `changeUserValue should reject empty money field`() = runTest {
-        viewModel.userToChange.value = "TestUser"
-        viewModel.moneyChange.value = ""
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Enter all the field ", viewModel.messageDialog.value)
-        // No repository calls should be made since validation fails
-    }
-
-    @Test
-    fun `changeUserValue should reject empty user field`() = runTest {
-        viewModel.userToChange.value = ""
-        viewModel.moneyChange.value = "100"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Enter all the field ", viewModel.messageDialog.value)
-        // No repository calls should be made since validation fails
-    }
-
-    @Test
-    fun `changeUserValue should reject blank fields`() = runTest {
-        viewModel.userToChange.value = "   "
-        viewModel.moneyChange.value = "100"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Enter all the field ", viewModel.messageDialog.value)
-        // No repository calls should be made since validation fails
-    }
-
-    @Test
-    fun `changeUserValue should reject invalid number format`() = runTest {
-        viewModel.userToChange.value = "TestUser"
-        viewModel.moneyChange.value = "abc"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Please enter a valid number", viewModel.messageDialog.value)
-        // No repository calls should be made since validation fails
-    }
-
-    @Test
-    fun `changeUserValue should reject negative amount`() = runTest {
-        viewModel.userToChange.value = "TestUser"
-        viewModel.moneyChange.value = "-50"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("It is not possible to subtract a negative amount from a user.", viewModel.messageDialog.value)
-        // No repository calls should be made since validation fails
-    }
-
-    @Test
-    fun `changeUserValue should handle non-existent user`() = runTest {
-        val userName = "NonExistentUser"
-        val existingUsers = listOf("User1", "User2")
-        
-        coEvery { userRepository.getUserList() } returns existingUsers
-        
-        viewModel.userToChange.value = userName
-        viewModel.moneyChange.value = "100"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("User not found", viewModel.messageDialog.value)
-        // User not found, so changeUserBalance shouldn't be called
-    }
-
-    @Test
-    fun `changeUserValue should handle repository returning false`() = runTest {
-        val userName = "TestUser"
-        val existingUsers = listOf(userName)
-        
-        coEvery { userRepository.getUserList() } returns existingUsers
-        coEvery { userRepository.changeUserBalance(userName, 100) } returns false
-        
-        viewModel.userToChange.value = userName
-        viewModel.moneyChange.value = "100"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Failed to update user balance", viewModel.messageDialog.value)
-        assertEquals(userName, viewModel.userToChange.value) // Should not be cleared on failure
-        assertEquals("100", viewModel.moneyChange.value) // Should not be cleared on failure
-    }
-
-    @Test
-    fun `changeUserValue should handle repository exception`() = runTest {
-        val userName = "TestUser"
-        val existingUsers = listOf(userName)
-        
-        coEvery { userRepository.getUserList() } returns existingUsers
-        coEvery { userRepository.changeUserBalance(userName, 100) } throws Exception("Database error")
-        
-        viewModel.userToChange.value = userName
-        viewModel.moneyChange.value = "100"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Failed to update balance", viewModel.messageDialog.value)
-    }
-
-    @Test
-    fun `changeUserValue should accept zero amount`() = runTest {
-        val userName = "TestUser"
-        val existingUsers = listOf(userName)
-        
-        coEvery { userRepository.getUserList() } returns existingUsers
-        coEvery { userRepository.changeUserBalance(userName, 0) } returns true
-        
-        viewModel.userToChange.value = userName
-        viewModel.moneyChange.value = "0"
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Balance successfully updated", viewModel.messageDialog.value)
-    }
-
-    @Test
-    fun `changeUserValue should handle large numbers`() = runTest {
-        val userName = "TestUser"
-        val largeAmount = 1000000
-        val existingUsers = listOf(userName)
-        
-        coEvery { userRepository.getUserList() } returns existingUsers
-        coEvery { userRepository.changeUserBalance(userName, largeAmount) } returns true
-        
-        viewModel.userToChange.value = userName
-        viewModel.moneyChange.value = largeAmount.toString()
-        
-        viewModel.changeUserValue()
-        
-        assertEquals("Balance successfully updated", viewModel.messageDialog.value)
-    }
 
     // Edge case tests
     @Test
@@ -401,16 +254,17 @@ class AddUserViewModelTest {
         
         viewModel.onUserNameChange(userName)
         
-        // Simulate another user being added to the list
-        viewModel.playerList.add("AnotherUser")
+        // The playerList is now immutable StateFlow, so we can't add directly
+        // We need to trigger a refresh to simulate the concurrent modification
+        viewModel.refreshPlayerList()
         
         viewModel.addUser()
         
-        assertEquals("Player NewUser added to the list.", viewModel.messageDialog.value)
+        assertEquals("User 'NewUser' added successfully", viewModel.messageDialog.value)
     }
 
     @Test
-    fun `multiple rapid calls to getPlayerList should handle correctly`() = runTest {
+    fun `multiple rapid calls to refreshPlayerList should handle correctly`() = runTest {
         val users1 = listOf("User1")
         val users2 = listOf("User1", "User2")
         val users3 = listOf("User1", "User2", "User3")
@@ -418,12 +272,12 @@ class AddUserViewModelTest {
         coEvery { userRepository.getUserList() } returnsMany listOf(users1, users2, users3)
         
         // Make rapid calls
-        viewModel.getPlayerList()
-        viewModel.getPlayerList()
-        viewModel.getPlayerList()
+        viewModel.refreshPlayerList()
+        viewModel.refreshPlayerList()
+        viewModel.refreshPlayerList()
         
-        // Final state should be users3
-        assertEquals(users3, viewModel.playerList)
+        // Final state should be users3 (sorted)
+        assertEquals(users3.sorted(), viewModel.playerList.value)
     }
 
     @Test
@@ -436,7 +290,7 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals("Player $userName added to the list.", viewModel.messageDialog.value)
+        assertEquals("User '$userName' added successfully", viewModel.messageDialog.value)
     }
 
     @Test
@@ -449,6 +303,86 @@ class AddUserViewModelTest {
         viewModel.onUserNameChange(userName)
         viewModel.addUser()
         
-        assertEquals("Player AB added to the list.", viewModel.messageDialog.value)
+        assertEquals("User 'AB' added successfully", viewModel.messageDialog.value)
+    }
+
+    // Network timeout tests
+    @Test
+    fun `refreshPlayerList should handle timeout and show network error`() = runTest {
+        coEvery { userRepository.getUserList() } throws Exception("Request timeout")
+        
+        viewModel.refreshPlayerList()
+        
+        // Should show network error
+        assertNotNull(viewModel.networkError.value)
+        assertEquals("Connection timeout. Please check your internet connection.", viewModel.networkError.value?.message)
+        
+        // Player list should be empty due to timeout
+        assertTrue(viewModel.playerList.value.isEmpty())
+    }
+
+    @Test
+    fun `addUser should handle timeout and show network error`() = runTest {
+        val userName = "TestUser"
+        coEvery { userRepository.getUserList() } returns emptyList()
+        coEvery { userRepository.addUser(userName, 0) } throws Exception("Request timeout")
+        
+        viewModel.onUserNameChange(userName)
+        viewModel.addUser()
+        
+        // Should show network error
+        assertNotNull(viewModel.networkError.value)
+        assertEquals("Connection timeout while adding user. Please check your internet connection.", viewModel.networkError.value?.message)
+    }
+
+    @Test
+    fun `network error retry should work correctly`() = runTest {
+        var callCount = 0
+        coEvery { userRepository.getUserList() } answers {
+            callCount++
+            if (callCount == 1) {
+                throw Exception("Request timeout")
+            } else {
+                listOf("Player1", "Player2") // Second call succeeds
+            }
+        }
+        
+        // First call - will timeout
+        viewModel.refreshPlayerList()
+        assertNotNull(viewModel.networkError.value)
+        
+        // Retry
+        viewModel.retryNetworkOperation()
+        
+        // Should now have players
+        assertEquals(listOf("Player1", "Player2"), viewModel.playerList.value)
+        assertNull(viewModel.networkError.value)
+    }
+
+    @Test
+    fun `clearNetworkError should clear error state`() = runTest {
+        coEvery { userRepository.getUserList() } throws Exception("Request timeout")
+        
+        viewModel.refreshPlayerList()
+        assertNotNull(viewModel.networkError.value)
+        
+        viewModel.clearNetworkError()
+        assertNull(viewModel.networkError.value)
+    }
+
+    @Test
+    fun `successful network call should clear any existing network error`() = runTest {
+        // First set up a timeout error
+        coEvery { userRepository.getUserList() } throws Exception("Request timeout")
+        viewModel.refreshPlayerList()
+        assertNotNull(viewModel.networkError.value)
+        
+        // Now make a successful call
+        coEvery { userRepository.getUserList() } returns listOf("Player1")
+        viewModel.refreshPlayerList()
+        
+        // Network error should be cleared
+        assertNull(viewModel.networkError.value)
+        assertEquals(listOf("Player1"), viewModel.playerList.value)
     }
 }

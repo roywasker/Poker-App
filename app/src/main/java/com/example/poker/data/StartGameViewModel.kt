@@ -1,21 +1,21 @@
 package com.example.poker.data
 
-import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.example.poker.data.base.BaseViewModel
 import com.example.poker.data.database.PlayerSessionRepository
 import com.example.poker.data.repository.GameRepository
 import com.example.poker.data.repository.TransferLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import javax.inject.Inject
@@ -24,7 +24,7 @@ import javax.inject.Inject
 class StartGameViewModel @Inject constructor(
     private val sessionRepository: PlayerSessionRepository,
     private val gameRepository: GameRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
     // Set the default of row to be 4
     var numOfRows = mutableIntStateOf(4)
@@ -43,14 +43,6 @@ class StartGameViewModel @Inject constructor(
 
     //List of all the player that chosen in this current game - Thread-safe
     private var playerListChosen = MutableStateFlow<List<String>>(emptyList())
-
-    // Message to popup in the screen - using StateFlow
-    private val _messageDialog = MutableStateFlow<String?>(null)
-    val messageDialog: StateFlow<String?> = _messageDialog.asStateFlow()
-
-    // Define the status of loading image to false - using StateFlow
-    private val _loading = MutableStateFlow(false)
-    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
     // Track if there's an active session - using StateFlow
     private val _hasActiveSession = MutableStateFlow(false)
@@ -107,6 +99,12 @@ class StartGameViewModel @Inject constructor(
 
         // For all player calculation the balance in the end of the game
         for (index in 0..<numOfRows.intValue){
+            // Ensure index is within array bounds
+            if (index >= nameOfPlayerArray.size || index >= buyMoneyArray.size || index >= returnMoneyArray.size) {
+                _messageDialog.value = "Error: Invalid player index $index"
+                return false
+            }
+            
             try {
                 val buyAmount = buyMoneyArray[index].value.toIntOrNull() ?: 0
                 val returnAmount = returnMoneyArray[index].value.toIntOrNull() ?: 0
@@ -121,7 +119,7 @@ class StartGameViewModel @Inject constructor(
 
         // If sum money is negative we have extra money
         if (sumMoney<0){
-            _messageDialog.value = "You have a extra of ${abs(sumMoney)} shekels."
+            _messageDialog.value = "You have an extra of ${abs(sumMoney)} shekels."
             return false
 
         // If sum money is positive we have deficit money
@@ -203,13 +201,6 @@ class StartGameViewModel @Inject constructor(
      */
     fun onDataChanged() {
         saveCurrentSession()
-    }
-
-    /**
-     * Function to clear message dialog
-     */
-    fun clearMessageDialog() {
-        _messageDialog.value = null
     }
 
     /**
@@ -333,7 +324,9 @@ class StartGameViewModel @Inject constructor(
             
             try {
                 val players = withContext(Dispatchers.IO) {
-                    gameRepository.getPlayersForStartGame()
+                    kotlinx.coroutines.withTimeout(3000L) {
+                        gameRepository.getPlayersForStartGame()
+                    }
                 }
                 
                 // Thread-safe update
@@ -342,9 +335,19 @@ class StartGameViewModel @Inject constructor(
                     !currentChosen.contains(playerName)
                 }
                 _loading.value = false
+                // Clear any existing network error on successful completion
+                _networkError.value = null
+            } catch (e: TimeoutCancellationException) {
+                Log.e(TAG, "Timeout fetching player list", e)
+                _loading.value = false
+                showNetworkError(
+                    "Connection timeout. Please check your internet connection.",
+                    retryAction = { getPlayerListToStartGame() }
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "getPlayerListToStartGame: $e")
                 _loading.value = false
+                showMessage("Failed to load players. Please try again.")
             }
         }
     }

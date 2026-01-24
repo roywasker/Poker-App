@@ -3,8 +3,8 @@ package com.example.poker.data
 import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.poker.data.base.BaseViewModel
 import com.example.poker.data.repository.GameRepository
 import com.example.poker.data.repository.PlayerStatistics
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,11 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlayerStatisticsViewModel @Inject constructor(
     private val gameRepository: GameRepository
-) : ViewModel() {
-
-    // Loading state
-    private val _loading = MutableStateFlow(false)
-    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+) : BaseViewModel() {
 
     // All players list for dropdown
     private val _playersList = MutableStateFlow<List<String>>(emptyList())
@@ -44,9 +40,6 @@ class PlayerStatisticsViewModel @Inject constructor(
     private val _playerHistoricalData = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val playerHistoricalData: StateFlow<List<Pair<String, Int>>> = _playerHistoricalData.asStateFlow()
 
-    // Error message dialog
-    private val _messageDialog = MutableStateFlow<String?>(null)
-    val messageDialog: StateFlow<String?> = _messageDialog.asStateFlow()
 
     init {
         loadPlayersList()
@@ -54,36 +47,52 @@ class PlayerStatisticsViewModel @Inject constructor(
     }
 
     private fun loadPlayersList() {
-        viewModelScope.launch {
-            _loading.value = true
-            try {
-                val players = withContext(Dispatchers.IO) {
+        launchWithLoading(
+            onError = { e ->
+                if (e is kotlinx.coroutines.TimeoutCancellationException || 
+                    e.message?.contains("timeout", ignoreCase = true) == true) {
+                    showNetworkError(
+                        "Connection timeout. Please check your internet connection.",
+                        retryAction = { loadPlayersList() }
+                    )
+                } else {
+                    Log.e(TAG, "loadPlayersList: $e")
+                    showMessage("Error loading players list")
+                }
+                _playersList.value = emptyList()
+            }
+        ) {
+            val players = withContext(Dispatchers.IO) {
+                kotlinx.coroutines.withTimeout(3000L) {
                     gameRepository.getPlayersForStartGame()
                 }
-                _playersList.value = players
-            } catch (e: Exception) {
-                Log.e(TAG, "loadPlayersList: $e")
-                _messageDialog.value = "Error loading players list"
-            } finally {
-                _loading.value = false
             }
+            _playersList.value = players
         }
     }
 
     fun loadAllPlayersStatistics() {
-        viewModelScope.launch {
-            _loading.value = true
-            try {
-                val allStats = withContext(Dispatchers.IO) {
+        launchWithLoading(
+            onError = { e ->
+                if (e is kotlinx.coroutines.TimeoutCancellationException || 
+                    e.message?.contains("timeout", ignoreCase = true) == true) {
+                    showNetworkError(
+                        "Connection timeout. Please check your internet connection.",
+                        retryAction = { loadAllPlayersStatistics() }
+                    )
+                } else {
+                    Log.e(TAG, "loadAllPlayersStatistics: $e")
+                    showMessage("Error loading statistics")
+                }
+                _allPlayersStatistics.value = emptyList()
+            }
+        ) {
+            val allStats = withContext(Dispatchers.IO) {
+                kotlinx.coroutines.withTimeout(3000L) {
                     gameRepository.getAllPlayersStatistics()
                 }
-                _allPlayersStatistics.value = allStats
-            } catch (e: Exception) {
-                Log.e(TAG, "loadAllPlayersStatistics: $e")
-                _messageDialog.value = "Error loading statistics"
-            } finally {
-                _loading.value = false
             }
+            _allPlayersStatistics.value = allStats
         }
     }
 
@@ -94,38 +103,50 @@ class PlayerStatisticsViewModel @Inject constructor(
     }
 
     private fun loadPlayerStatistics(playerName: String) {
-        viewModelScope.launch {
-            _loading.value = true
-            try {
-                val stats = withContext(Dispatchers.IO) {
+        launchWithLoading(
+            onError = { e ->
+                if (e is kotlinx.coroutines.TimeoutCancellationException || 
+                    e.message?.contains("timeout", ignoreCase = true) == true) {
+                    showNetworkError(
+                        "Connection timeout. Please check your internet connection.",
+                        retryAction = { loadPlayerStatistics(playerName) }
+                    )
+                } else {
+                    Log.e(TAG, "loadPlayerStatistics: $e")
+                    showMessage("Error loading player statistics")
+                }
+                _playerStatistics.value = null
+            }
+        ) {
+            val stats = withContext(Dispatchers.IO) {
+                kotlinx.coroutines.withTimeout(3000L) {
                     gameRepository.getPlayerStatistics(playerName)
                 }
-                _playerStatistics.value = stats
-            } catch (e: Exception) {
-                Log.e(TAG, "loadPlayerStatistics: $e")
-                _messageDialog.value = "Error loading player statistics"
-            } finally {
-                _loading.value = false
             }
+            _playerStatistics.value = stats
         }
     }
 
     private fun loadPlayerHistoricalData(playerName: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(exceptionHandler) {
             try {
                 val historicalData = withContext(Dispatchers.IO) {
-                    gameRepository.getPlayerHistoricalData(playerName)
+                    kotlinx.coroutines.withTimeout(3000L) {
+                        gameRepository.getPlayerHistoricalData(playerName)
+                    }
                 }
                 _playerHistoricalData.value = historicalData
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                Log.e(TAG, "loadPlayerHistoricalData timeout: $e")
+                _playerHistoricalData.value = emptyList()
             } catch (e: Exception) {
                 Log.e(TAG, "loadPlayerHistoricalData: $e")
+                _playerHistoricalData.value = emptyList()
             }
         }
     }
 
-    fun clearMessageDialog() {
-        _messageDialog.value = null
-    }
+    // clearMessageDialog is inherited from BaseViewModel
 
     fun getTopPerformers(): List<PlayerStatistics> {
         return _allPlayersStatistics.value

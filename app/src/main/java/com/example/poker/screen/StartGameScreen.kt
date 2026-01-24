@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.StartGameViewModel
 import com.example.poker.route.Routes
+import com.example.poker.screen.components.NetworkErrorDialog
 
 const val maxPlayer = 9
 const val minPlayer = 4
@@ -90,6 +92,9 @@ fun StartGameScreen(
 fun StartGameComponent(navController: NavHostController,viewModel: StartGameViewModel) {
     var numOfRows by viewModel.numOfRows
     val scrollState = rememberScrollState()
+    
+    // Stabilize navigation lambda to prevent recreation on every recomposition
+    val navigateToHome = remember { { navController.navigate(Routes.homeScreen) } }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -104,7 +109,7 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
                 },
                 // Set back arrow to go the home screen
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigate(Routes.homeScreen) }) {
+                    IconButton(onClick = navigateToHome) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Back",
@@ -128,8 +133,11 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
 
             // Display row by default or user chose
             for (i  in 0..<numOfRows){
-                Spacer(modifier = Modifier.height(12.dp))
-                PlayerDataComponent(index = i, viewModel= viewModel)
+                // Use key to prevent unnecessary recompositions when list changes
+                key(i) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    PlayerDataComponent(index = i, viewModel= viewModel)
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -158,26 +166,26 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
             }
             Spacer(modifier = Modifier.height(16.dp))
 
+            val onFinishGame = remember { {
+                val status = viewModel.finishGameButton()
+                // If the function in view model finis successful move to transfer screen
+                if (status) {
+                    navController.navigate(route = Routes.TransferLog)
+                }
+            } }
+            
             ButtonComponent(
                 buttonText = "Finish Game",
-                onClick = {
-                    val status = viewModel.finishGameButton()
-
-                    // If the function in view model finis successful move to transfer screen
-                    if (status) {
-                        navController.navigate(route = Routes.TransferLog)
-                    }
-                })
+                onClick = onFinishGame)
 
             // Show clear session button if there's an active session
             val hasActiveSession by viewModel.hasActiveSession.collectAsState()
             if (hasActiveSession) {
                 Spacer(modifier = Modifier.height(12.dp))
+                val onClearSession = remember { { viewModel.clearSavedSession() } }
                 ButtonComponent(
                     buttonText = "Clear Session",
-                    onClick = {
-                        viewModel.clearSavedSession()
-                    }
+                    onClick = onClearSession
                 )
             }
         }
@@ -196,6 +204,17 @@ fun StartGameComponent(navController: NavHostController,viewModel: StartGameView
             }
         )
     }
+    
+    // Show network error dialog with retry option
+    val networkError by viewModel.networkError.collectAsState()
+    NetworkErrorDialog(
+        errorState = networkError,
+        onRetry = { viewModel.retryNetworkOperation() },
+        onDismiss = { 
+            viewModel.clearNetworkError()
+            navController.navigate(Routes.homeScreen)
+        }
+    )
 }
 
 @Composable
@@ -224,7 +243,8 @@ fun TitleTextComponent(){
 fun DropDown(indexInArray: Int, viewModel: StartGameViewModel){
     val list by viewModel.playerList.collectAsState()
     var isExpanded by remember { mutableStateOf(false) }
-    var selectedPlayer by remember { mutableStateOf(viewModel.nameOfPlayerArray[indexInArray].value) }
+    // Use the current value from viewModel directly to avoid stale state
+    val selectedPlayer = viewModel.nameOfPlayerArray[indexInArray].value
 
     ExposedDropdownMenuBox(expanded = isExpanded,
         onExpandedChange = {isExpanded=!isExpanded}) {
@@ -245,16 +265,17 @@ fun DropDown(indexInArray: Int, viewModel: StartGameViewModel){
                     text = { Text(text = text,
                         fontSize = 14.sp)},
                     onClick ={
-
+                        // Create stable lambda with remember
+                        val currentSelected = viewModel.nameOfPlayerArray[indexInArray].value
                         // If user enter correct player name , remove this name from list
-                        if (selectedPlayer != "") {
-                            viewModel.removePlayerFromList(selectedPlayer)
+                        if (currentSelected != "") {
+                            viewModel.removePlayerFromList(currentSelected)
                         }
 
-                        selectedPlayer = list[index]
-                        viewModel.nameOfPlayerArray[indexInArray].value = selectedPlayer
+                        val newSelectedPlayer = list[index]
+                        viewModel.nameOfPlayerArray[indexInArray].value = newSelectedPlayer
                         isExpanded = false
-                        viewModel.addPlayerToList(selectedPlayer)
+                        viewModel.addPlayerToList(newSelectedPlayer)
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
@@ -281,16 +302,19 @@ fun PlayerDataComponent(index: Int, viewModel: StartGameViewModel) {
 
 @Composable
 fun BuyFieldComponent(index: Int, viewModel: StartGameViewModel) {
-    val money by remember { viewModel.buyMoneyArray[index] }
+    val money by viewModel.buyMoneyArray[index]
+    // Stabilize the onValueChange lambda
+    val onValueChange = remember(index) { { value: String ->
+        viewModel.buyMoneyArray[index].value = value
+        viewModel.onDataChanged() // Save session when data changes
+    } }
+    
     OutlinedTextField(
         value = money,
         modifier = Modifier
             .width(80.dp)
             .height(50.dp),
-        onValueChange = {
-            viewModel.buyMoneyArray[index].value = it
-            viewModel.onDataChanged() // Save session when data changes
-        },
+        onValueChange = onValueChange,
         keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Next
@@ -301,16 +325,19 @@ fun BuyFieldComponent(index: Int, viewModel: StartGameViewModel) {
 
 @Composable
 fun ReturnFieldComponent(index: Int, viewModel: StartGameViewModel) {
-    val money by remember { viewModel.returnMoneyArray[index] }
+    val money by viewModel.returnMoneyArray[index]
+    // Stabilize the onValueChange lambda
+    val onValueChange = remember(index) { { value: String ->
+        viewModel.returnMoneyArray[index].value = value
+        viewModel.onDataChanged() // Save session when data changes
+    } }
+    
     OutlinedTextField(
         value = money,
         modifier = Modifier
             .width(80.dp)
             .height(50.dp),
-        onValueChange = {
-            viewModel.returnMoneyArray[index].value = it
-            viewModel.onDataChanged() // Save session when data changes
-        },
+        onValueChange = onValueChange,
         keyboardOptions = KeyboardOptions.Default.copy(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Next

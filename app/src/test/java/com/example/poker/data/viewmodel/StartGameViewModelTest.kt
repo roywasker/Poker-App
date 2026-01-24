@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.delay
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,6 +48,7 @@ class StartGameViewModelTest {
         // Mock Android Log
         mockkStatic(Log::class)
         every { Log.e(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>(), any()) } returns 0
         every { Log.d(any<String>(), any<String>()) } returns 0
         
         // Mock Dispatchers.IO to use test dispatcher
@@ -314,7 +316,7 @@ class StartGameViewModelTest {
         val result = viewModel.finishGameButton()
         
         assertFalse(result)
-        assertEquals("You have a extra of 50 shekels.", viewModel.messageDialog.value)
+        assertEquals("You have an extra of 50 shekels.", viewModel.messageDialog.value)
     }
 
     @Test
@@ -569,4 +571,6 @@ class StartGameViewModelTest {
         assertFalse(viewModel.loading.value)
         assertEquals(listOf("Player1", "Player2"), viewModel.playerList.value)
     }
+
+    // Network timeout tests moved to StartGameViewModelNetworkTest.kt
 }

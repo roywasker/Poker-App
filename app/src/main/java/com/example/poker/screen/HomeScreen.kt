@@ -90,21 +90,21 @@ fun BoxComponent(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.TopCenter
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.main),
-                contentDescription = "App Logo",
-                modifier = Modifier
-                    .padding(top = 2.dp)
-                    .clip(RoundedCornerShape(bottomStart = 35.dp, bottomEnd = 35.dp))
-                    .align(Alignment.TopCenter)
-            )
             Column(
-                verticalArrangement = Arrangement.spacedBy(28.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(80.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.main),
+                    contentDescription = "App Logo",
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clip(RoundedCornerShape(bottomStart = 35.dp, bottomEnd = 35.dp))
+//                        .align(Alignment.TopCenter)
+                )
+//                Spacer(modifier = Modifier.height(80.dp))
                 ButtonComponent(context.getString(R.string.start_game), navController, Routes.startGame)
                 ButtonComponent(context.getString(R.string.add_new_player),navController,Routes.addUserScreen)
                 ButtonComponent(context.getString(R.string.player_balance), navController, Routes.playerBalance)
@@ -133,7 +133,7 @@ fun ButtonComponent(buttonText: String, navController: NavHostController, naviga
     ) {
         Text(
             text = buttonText,
-            fontSize = 18.sp
+            fontSize = 16.sp
         )
     }
 }

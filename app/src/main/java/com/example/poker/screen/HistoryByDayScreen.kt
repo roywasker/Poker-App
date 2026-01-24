@@ -51,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.poker.data.HistoryByDayViewModel
 import com.example.poker.route.Routes
+import com.example.poker.screen.components.NetworkErrorDialog
 
 
 @Composable
@@ -136,6 +137,17 @@ fun HistoryByDayComponent(navController: NavHostController, historyByDayViewMode
             }
         )
     }
+    
+    // Show network error dialog with retry option
+    val networkError by historyByDayViewModel.networkError.collectAsState()
+    NetworkErrorDialog(
+        errorState = networkError,
+        onRetry = { historyByDayViewModel.retryNetworkOperation() },
+        onDismiss = { 
+            historyByDayViewModel.clearNetworkError()
+            navController.navigate(Routes.homeScreen)
+        }
+    )
 }
 
 @Composable
